@@ -18,3 +18,6 @@ __pycache__/
 
 # practice run folders: reports, logs, traces (prompts and replies)
 practice/*/
+
+# read-only reference clones (EngineerML/Ditto_research): never committed here
+reference/
