@@ -4,7 +4,7 @@ var cities = []string{
 	"Lisbon", "Tallinn", "Porto", "Ljubljana", "Valencia", "Krakow", "Bergen",
 	"Ghent", "Bologna", "Tbilisi", "Seville", "Gdansk", "Leipzig", "Utrecht",
 	"Aarhus", "Brno", "Cluj", "Graz", "Malmo", "Riga", "Turku", "Vilnius",
-	"Zadar", "Lyon", "Nantes", "Bilbao", "Salzburg", "Plovdiv", "Tartu", "Split",
+	"Zadar", "Lyon", "Nantes", "Bilbao", "Salzburg", "Plovdiv", "Tartu",
 	"Coimbra", "Trieste", "Kaunas", "Pecs", "Bratislava", "Uppsala", "Lille",
 	"Groningen", "Innsbruck", "Varna", "Debrecen", "Oulu", "Antwerp", "Bruges",
 	"Rotterdam", "Eindhoven", "Maastricht", "Hamburg", "Dresden", "Freiburg",
@@ -16,7 +16,7 @@ var cities = []string{
 	"Patras", "Heraklion", "Naples", "Palermo", "Turin", "Verona", "Genoa",
 	"Parma", "Padua", "Marseille", "Bordeaux", "Toulouse", "Strasbourg",
 	"Montpellier", "Rennes", "Grenoble", "Granada", "Malaga", "Zaragoza",
-	"Cordoba", "Santander", "Oviedo", "Braga", "Faro", "Aveiro", "Cork", "Galway",
+	"Cordoba", "Santander", "Oviedo", "Braga", "Faro", "Aveiro", "Galway",
 	"Limerick", "Belfast", "Glasgow", "Edinburgh", "Aberdeen", "Cardiff",
 	"Bristol", "Leeds", "Oslo", "Trondheim", "Stavanger", "Gothenburg", "Lund",
 	"Odense", "Aalborg", "Tampere", "Espoo", "Helsinki", "Reykjavik", "Akureyri",
@@ -37,14 +37,12 @@ var cities = []string{
 	"Adelaide", "Brisbane", "Darwin",
 }
 
-// Pool sizes bound MaxCases: each round of the four default families draws at
-// most 10 cities, 5 names and 2 drinks, and Builder.Pick never reuses a value
-// within a pack. Events are drawn with Builder.Any, since a reserved name
-// already makes each question unique. MaxCases (80, twenty rounds) therefore
-// needs at least 200 cities, 100 names and 40 drinks; TestPoolsFillMaxCases
-// holds that. Values must also stay apart:
-// no value may contain another value from any pool, so one case's gold can
-// never ground or decoy another's.
+// Pool sizes bound MaxCases: Builder.Pick never reuses a value within a
+// pack, and one round of the fifteen default families draws at most 22
+// cities, 9 projects, 5 milestones, 3 statuses, 2 firms, 2 domains and one
+// nickname. MaxCases (80) is six rounds; TestPoolsFillMaxCases holds that.
+// Values must also stay apart: no value may contain another value from any
+// pool, so one case's gold can never ground or decoy another's.
 
 var firstNames = []string{
 	"Ines", "Tobias", "Marisol", "Henrik", "Aiyana", "Dmitri", "Noor", "Callum",
@@ -75,22 +73,6 @@ var events = []string{
 	"retirement party", "housewarming", "chess tournament", "pottery workshop",
 	"wine tasting", "farewell dinner", "science fair", "yoga retreat",
 	"trivia final", "sailing regatta",
-}
-
-var drinksPool = []string{
-	"espresso", "matcha", "rooibos", "kombucha", "chai", "yerba mate",
-	"cold brew", "oat latte", "green tea", "hot chocolate", "kefir", "cortado",
-	"hojicha", "corn silk tea", "turmeric latte", "lassi", "genmaicha", "americano",
-	"flat white", "ginger tea", "sencha", "mint tea", "macchiato", "chamomile",
-	"golden milk", "pu-erh", "horchata", "earl grey", "lapsang souchong",
-	"oolong", "jasmine tea", "hibiscus tea", "lemon verbena", "rosehip tea",
-	"nettle tea", "dandelion coffee", "chicory coffee", "mocha", "affogato",
-	"ristretto", "lungo", "cappuccino", "cafe au lait", "turkish coffee",
-	"vietnamese coffee", "bubble tea", "yuzu tea", "sparkling water",
-	"carrot juice", "beet juice", "apple cider", "elderflower cordial",
-	"ginger beer", "kvass", "ayran", "chaga tea", "guayusa", "cascara", "bancha",
-	"kukicha", "gyokuro", "white tea", "drip coffee", "piccolo", "red eye",
-	"breve", "sikhye",
 }
 
 var filler = [][2]string{
@@ -125,3 +107,135 @@ var filler = [][2]string{
 	{"The gym was packed this morning.", "Early mornings get busy after the holidays."},
 	{"I've been meaning to call my grandmother.", "She'd probably love to hear from you."},
 }
+
+// surnames pair with firstNames in Builder.Person; all are plain
+// capitalised words, the shape the agents' full-name pattern reads.
+var surnames = []string{
+	"Varga", "Moreau", "Haas", "Lindqvist", "Okafor", "Brandt", "Castillo",
+	"Novak", "Petrov", "Sato", "Kowalski", "Fischer", "Romero", "Duarte",
+	"Ferreira", "Nakamura", "Larsen", "Holm", "Dubois", "Weber", "Ibarra",
+	"Quinlan", "Marsh", "Whitfield", "Achebe", "Mendes", "Rossi", "Bianchi",
+	"Keller", "Vogel", "Sandoval", "Pereira", "Coelho", "Takahashi", "Yilmaz",
+	"Demir", "Kaya", "Horvath", "Szabo", "Toth", "Nagy", "Dvorak", "Svoboda",
+	"Jensen", "Nilsen", "Berg", "Strand", "Aalto", "Virtanen", "Kask", "Ozols",
+	"Kalnins", "Popescu", "Ionescu", "Dimitrov", "Georgiev", "Papadakis", "Costa",
+	"Russo", "Gallo", "Conti", "Ortega", "Navarro", "Molina", "Delgado",
+	"Herrera", "Medina", "Vargas", "Rios", "Fuentes", "Acosta", "Pacheco",
+	"Salazar", "Bauer", "Hartmann", "Kruger", "Lehmann", "Schulz", "Wagner",
+	"Zimmer", "Abara", "Mensah", "Owusu", "Boateng", "Adeyemi", "Nwosu", "Kamau",
+	"Otieno", "Mwangi", "Banda", "Phiri", "Tembo", "Kim", "Park", "Choi", "Lim",
+	"Tan", "Wong", "Chua", "Ong", "Reyes", "Santos", "Cruz", "Bautista",
+}
+
+// nicknames are what colleagues call someone; NicknameEmail changes an
+// address under the nickname alone.
+var nicknames = []string{
+	"Kit", "Doc", "Ace", "Bee", "Sunny", "Moose", "Pip", "Biscuit", "Sparky",
+	"Duke", "Scout", "Rocket", "Bear", "Taz", "Jinx", "Ziggy", "Boots", "Pepper",
+	"Maverick", "Tink", "Dash", "Fizz", "Sprout", "Chip", "Bo", "Rusty", "Mojo",
+	"Noodle", "Peaches", "Gizmo",
+}
+
+// projects are coined names, so no project is a real word another pool or
+// the filler could contain.
+var projects = []string{
+	"Aldoria", "Brevant", "Calimor", "Dovrane", "Esterly", "Falkira", "Gorvane",
+	"Halcyra", "Istrel", "Kelvane", "Lunaris", "Morvett", "Nexara", "Ostrin",
+	"Pellara", "Quorra", "Ravelin", "Solvane", "Ulvane", "Varnis", "Wexley",
+	"Zelvane", "Ambrel", "Bastrel", "Corvin", "Delvar", "Emberly", "Fenwick",
+	"Galdor", "Hesper", "Ivoran", "Kalvex", "Lorvane", "Mirelle", "Norrin",
+	"Orvell", "Pravin", "Quentro", "Rovane", "Selmar", "Ulmora", "Vespera",
+	"Wrenfold", "Xylar", "Yoravel", "Zanthe", "Arcadel", "Brimley", "Caskel",
+	"Dunmore", "Elstow", "Fairlow", "Glenvar", "Holloway", "Jesmond", "Kirrin",
+	"Lowmere", "Marrick", "Nettley", "Oakhurst", "Pemberly", "Rookwood",
+	"Thornbury", "Upworth", "Valemont", "Westbrook", "Yewdale", "Zennor",
+	"Ashgrove", "Birchmont", "Coldwell", "Everdene", "Foxmere", "Greywell",
+	"Hartcombe", "Kingsmere", "Larchfield", "Millbrook", "Northwold", "Orchardly",
+	"Pinecrest", "Redfern", "Silverlode", "Tidewater", "Underhill", "Wexmoor",
+}
+
+// domains are coined work-mail domains.
+var domains = []string{
+	"lumenfield.co", "corbelhq.com", "fernway.io", "quayside.net", "ridgeview.co",
+	"pinemark.io", "halden.co", "brightwater.org", "ostara.io", "velvetine.co",
+	"marlowe-labs.com", "tidecraft.io", "ashbourne.co", "cobaltpeak.com",
+	"greystone.io", "lanternhq.co", "meridianworks.net", "oakenshaw.co",
+	"pebblebay.io", "quillstone.com", "rivermint.co", "saltaire.io",
+	"thistledown.org", "umberline.co", "vesperhq.com", "willowmere.io",
+	"yellowpine.co", "zephyrlane.com", "amberfield.io", "birchline.co",
+}
+
+// firms hold contracts in OwnerFirm.
+var firms = []string{
+	"Brightline Catering", "Copperleaf Hospitality", "Saltmarsh Kitchens",
+	"Larder Lane Foods", "Greenhouse Table", "Silver Spoon Events",
+	"Harvest Moon Catering", "Bluebell Banquets", "Fig Tree Kitchens",
+	"Olive Grove Catering", "Ember Hall Events", "Linden Street Catering",
+	"Marigold Feasts", "Cedar Plate Company", "Sunday Supper Club",
+	"Wildflower Catering", "Quartz Kitchen Collective", "Northstar Banqueting",
+	"Tidepool Catering", "Hearthside Events", "Crimson Ladle",
+	"Pepperpot Catering", "Willow Table Events", "Ironbark Kitchens",
+	"Goldleaf Dining", "Riverside Spread", "Cloverfield Catering",
+	"Amberline Events", "Stoneoven Catering", "Blue Door Kitchens",
+	"Palisade Hospitality", "Meadowlark Catering", "Foxglove Feasts",
+	"Lantern House Catering", "Seaglass Events", "Orchard Row Kitchens",
+	"Peppercorn Hall", "Firefly Catering", "Driftwood Dining",
+}
+
+// statuses are multi-word states with no negation, past marker or "and",
+// so every one grades as one phrase.
+var statuses = []string{
+	"awaiting final sign-off", "cleared for printing",
+	"paused pending budget review", "with the legal team",
+	"waiting on vendor quotes", "scheduled for spring", "approved in principle",
+	"in final testing", "out for review", "ready to ship",
+	"blocked on procurement", "under budget review", "parked until autumn",
+	"live in pilot", "queued for the board", "with the design team",
+	"awaiting customer feedback", "signed off by finance", "in contract talks",
+	"on the launch calendar", "pending safety check", "waiting on permits",
+	"drafted for comment", "in user testing", "booked for delivery",
+	"under vendor evaluation", "ready for handover", "held for legal review",
+	"in the approval queue", "waiting on translation", "set for soft launch",
+	"slotted for next quarter", "in final edits", "with procurement",
+	"awaiting site survey", "cleared by compliance", "in price negotiation",
+	"ready for sign-off", "scheduled for rollout", "back in drafting",
+}
+
+// milestones are the dated items of one schedule in EventOrder.
+var milestones = []string{
+	"dress fitting", "venue walkthrough", "cake tasting", "rehearsal dinner",
+	"engagement shoot", "florist meeting", "menu trial", "guest list freeze",
+	"seating plan review", "band audition", "invitation printing", "hair trial",
+	"suit alterations", "license appointment", "ring pickup", "welcome brunch",
+	"playlist review", "lighting check", "transport booking",
+	"speech run-through", "budget check-in", "site visit", "kickoff call",
+	"design review", "vendor demo", "contract signing", "pilot launch",
+	"training session", "board briefing", "press preview", "user interviews",
+	"beta freeze", "load test", "security audit", "price review", "stock count",
+	"staff briefing", "photo selection", "catalog proof", "showroom visit",
+	"furniture delivery", "paint sampling", "plumber visit", "electrician visit",
+	"tile selection", "kitchen fitting", "carpet install", "final inspection",
+	"key handover", "moving day", "garage clearout", "school tour",
+	"parent evening", "sports day", "piano recital", "uniform fitting",
+	"dentist checkup", "eye test", "passport appointment",
+}
+
+// threads are pieces of work a person holds or a status describes.
+var threads = []string{
+	"vendor audit", "office move", "brand refresh", "grant application",
+	"hiring drive", "pricing update", "website rebuild", "warehouse lease",
+	"insurance renewal", "client onboarding", "data migration",
+	"partner contract", "safety review", "fleet upgrade", "supplier switch",
+	"annual report", "kitchen remodel", "garden redesign", "loan refinance",
+	"visa paperwork",
+}
+
+// rosters are the lists MembershipFold changes.
+var rosters = []string{
+	"carpool rota", "book club roster", "volunteer list", "party guest roster",
+	"relay team", "study group", "choir roster", "snack rota", "cleaning rota",
+	"board game group",
+}
+
+// schedules hold EventOrder's milestones.
+var schedules = []string{"wedding plans", "renovation plan", "launch plan", "move plan", "spring project plan", "garden project"}

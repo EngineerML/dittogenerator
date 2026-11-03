@@ -1,20 +1,30 @@
-"""Run our generator's packs against a local agent with the official challenge scorer.
+"""Run our generator's packs against a local panel of agent images with the official challenge scorer.
 
-Starts one harness image the way tools/practice_docker.py does (OpenRouter gpt-oss-20b, the
-embedding shim), then runs `challenge-scorer run` from the upstream repo on the generator source
-and prints, per case family, how many cases the agent solved (score >= 0.5) and its mean score.
-With one agent nothing can be "discriminating" (that needs two owners), so this only shows
-which families our own agent finds trivial or impossible.
+Packs are rehearsed as a live round would request them (`--round-bench`, 15 by default, so they are graded
+at the policy they declare), then each pack runs against every agent in fresh containers, so no memory
+carries over between packs. Per case family (the case id without its round number) it prints, for each
+agent, how many cases it solved (score >= 0.5) and its mean, plus the scorer's discriminating / trivial /
+unsolved split over the whole panel.
 
-    python3 tools/generator_panel.py --image ditto-harness:combined-tool4 --seeds 1 --cases 16
+    python3 tools/generator_panel.py --agent drp=drp23v15 --agent dan0l=v30-released --seeds 1 --cases 80
+    python3 tools/generator_panel.py --mock --agent drp=drp23v15 --agent dan0l=v30-released --seeds 3
 
-Needs OPENROUTER_API_KEY in .env.local. Writes practice/generator/<stamp>/run.json.
+--mock is free: a fake model and fake embeddings stand in for OpenRouter, so nothing is graded, but every
+traced image records per case the lane it chose, the reading path and the records it put in front of the
+model. The summary then shows, per family and agent, the lanes, the paths and how often the case's
+evidence pairs reached the packet.
+
+The real run needs OPENROUTER_API_KEY in .env.local and costs about $0.003 per case per agent.
+Writes practice/generator/<stamp>/ (packs, run-*.json, traces, harness logs).
 """
 
 import argparse
 import collections
+import glob
+import hashlib
 import http.server
 import json
+import math
 import os
 import subprocess
 import sys
@@ -29,6 +39,7 @@ import practice_docker as pd  # noqa: E402
 
 HERE = pd.HERE
 API_DIR = HERE / "repos" / "ditto-subnet" / "services" / "dittobench-api"
+DATAGEN_DIR = HERE / "repos" / "ditto-subnet" / "research" / "dittobench-datagen"
 SCORER = HERE / ".cache" / "challenge-scorer"
 TEST_HOTKEY = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 
@@ -36,8 +47,8 @@ TEST_HOTKEY = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 class NullToolsProxy(http.server.BaseHTTPRequestHandler):
     """Forward to the harness, turning `"tools": null` into `[]`.
 
-    The local challenge runner sends memory cases with tools null, and our harness's request
-    model requires a list, so without this every case comes back as a malformed request."""
+    The local challenge runner sends memory cases with tools null, and some harnesses' request models
+    require a list, so without this every case comes back as a malformed request."""
 
     target = ""
 
@@ -70,8 +81,51 @@ class NullToolsProxy(http.server.BaseHTTPRequestHandler):
         pass
 
 
-def start_proxy(target: str) -> str:
-    handler = type("Proxy", (NullToolsProxy,), {"target": target})
+class FakeModel(http.server.BaseHTTPRequestHandler):
+    """A stand-in for OpenRouter chat and the Ollama-style embedding gateway, for --mock runs.
+
+    Chat always answers one fixed line with no tool call. Embeddings are hashed bags of words, so similar
+    texts still land near each other and retrieval behaves roughly as it would."""
+
+    def reply(self, payload: dict) -> None:
+        body = json.dumps(payload).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self) -> None:
+        self.reply({"status": "ok"})
+
+    def do_POST(self) -> None:
+        req = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+        if self.path.endswith("/chat/completions"):
+            self.reply({"id": "mock", "object": "chat.completion", "model": req.get("model", "mock"),
+                        "choices": [{"index": 0, "finish_reason": "stop",
+                                     "message": {"role": "assistant", "content": "ANSWER: unknown"}}],
+                        "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}})
+            return
+        texts = req.get("input", req.get("prompt", ""))
+        single = isinstance(texts, str)
+        vectors = [embed(t) for t in ([texts] if single else texts)]
+        self.reply({"embedding": vectors[0]} if self.path == "/api/embeddings" else {"embeddings": vectors})
+
+    def log_message(self, *args) -> None:
+        pass
+
+
+def embed(text: str, dims: int = 768) -> list[float]:
+    v = [0.0] * dims
+    for word in text.lower().split():
+        v[int(hashlib.sha256(word.strip(".,;:!?\"'()").encode()).hexdigest(), 16) % dims] += 1.0
+    norm = math.sqrt(sum(x * x for x in v)) or 1.0
+    return [x / norm for x in v]
+
+
+def serve(handler, target: str = "") -> str:
+    if target:
+        handler = type("Proxy", (handler,), {"target": target})
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return f"http://127.0.0.1:{server.server_address[1]}"
@@ -81,90 +135,204 @@ def family(case_id: str) -> str:
     return case_id.rsplit("-", 1)[0]
 
 
-def summarize(run: dict) -> None:
-    """Per family: cases, solved by the agent, mean score; walks whatever case rows the file has."""
-    rows = []
+def rehearse(args, out: Path) -> list[Path]:
+    packs = out / "packs"
+    packs.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["go", "run", "./cmd/challenge", "rehearse", "-dir", str(args.dir), "-hotkey", TEST_HOTKEY,
+                    "-seeds", str(args.seeds), "-seed", str(args.seed), "-cases", str(args.cases),
+                    "-round-bench", str(args.round_bench), "-out-dir", str(packs)], cwd=DATAGEN_DIR, check=True)
+    return sorted(packs.glob("*.json"))
 
-    def walk(node):
-        if isinstance(node, dict):
-            if "case_id" in node and "score" in node:
-                rows.append(node)
-            for value in node.values():
-                walk(value)
-        elif isinstance(node, list):
-            for value in node:
-                walk(value)
 
-    walk(run.get("input", run))
-    by = collections.defaultdict(list)
-    for r in rows:
-        by[family(r["case_id"])].append(float(r["score"]))
-    print(f"{'family':14s} cases solved mean")
-    for name, scores in sorted(by.items()):
-        solved = sum(s >= 0.5 for s in scores)
-        print(f"{name:14s} {len(scores):5d} {solved:6d} {sum(scores) / len(scores):.2f}")
+def start_agents(args, out: Path, tag: str, env: dict, model_url: str, embed_url: str) -> list[tuple[str, str, str]]:
+    """Start one container per agent; returns (agent id, proxy url, container name)."""
+    started = []
+    for k, (agent, image) in enumerate(args.agent):
+        port = args.harness_port + k
+        container = f"ditto-generator-{port}"
+        trace = out / "trace" / tag / agent
+        trace.mkdir(parents=True, exist_ok=True)
+        trace.chmod(0o777)  # the harness may run as an unprivileged user
+        cmd = ["docker", "run", "-d", "--rm", "--name", container, "--network", "host",
+               "-e", f"PORT={port}", "-e", "DITTOBENCH_PROVIDER=openrouter",
+               "-e", "DITTOBENCH_MODEL=openai/gpt-oss-20b", "-e", "OPENROUTER_API_KEY",
+               "-e", f"OLLAMA_BASE_URL={embed_url}", "-e", "DITTOBENCH_DB=/tmp/practice.db",
+               "-v", f"{trace}:/trace", "-e", "HARNESS_TRACE_DIR=/trace"]
+        if model_url:
+            cmd += ["-e", f"OPENROUTER_BASE_URL={model_url}/v1"]
+        # The images' own command binds 8080 whatever PORT says, so give each its port explicitly.
+        cmd += [f"ditto-harness:{image}", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", str(port),
+                "--workers", "1", "--log-level", "info"]
+        subprocess.run(cmd, env=env, check=True, stdout=subprocess.DEVNULL)
+        started.append((agent, f"http://127.0.0.1:{port}", container))
+    try:
+        for _, url, _ in started:
+            pd.wait_http(f"{url}/health")
+    except RuntimeError:
+        stop_agents(out, tag, started)
+        raise
+    return [(agent, serve(NullToolsProxy, url), container) for agent, url, container in started]
+
+
+def stop_agents(out: Path, tag: str, started) -> None:
+    for agent, _, container in started:
+        logs = subprocess.run(["docker", "logs", container], capture_output=True, text=True)
+        (out / "trace" / tag / agent / "harness.log").write_text(pd.redact(logs.stdout + logs.stderr))
+        subprocess.run(["docker", "rm", "-f", container], capture_output=True)
+
+
+def summarize(out: Path) -> None:
+    """Per family: each agent's solved/n and mean, and the panel's discriminating/trivial/unsolved split."""
+    per = collections.defaultdict(lambda: collections.defaultdict(list))
+    status = collections.defaultdict(collections.Counter)
+    credit = collections.defaultdict(float)
+    agents = []
+    for run in sorted(out.glob("run-*.json")):
+        d = json.loads(run.read_text())
+        for seed in d["input"]["seeds"]:
+            for slot in seed["panel"]:
+                if slot["agent_id"] not in agents:
+                    agents.append(slot["agent_id"])
+                for r in slot["results"]:
+                    per[family(r["case_id"])][slot["agent_id"]].append(float(r["score"]))
+        for seed in d["score"]["seeds"]:
+            for c in seed["cases"]:
+                status[family(c["case_id"])][c["status"]] += 1
+                credit[family(c["case_id"])] += float(c.get("credit") or 0)
+    if not per:
+        return
+    print(f"{'family':40s} " + " ".join(f"{a[:12]:>14s}" for a in agents) + "   disc triv unsol  credit/case")
+    for name in sorted(per):
+        cells = []
+        for a in agents:
+            s = per[name][a]
+            cells.append(f"{sum(x >= 0.5 for x in s):3d}/{len(s):<3d} {sum(s) / len(s):.2f}" if s else " " * 14)
+        st, n = status[name], sum(status[name].values())
+        print(f"{name:40s} " + " ".join(f"{c:>14s}" for c in cells)
+              + f"   {st['discriminating']:4d} {st['trivial']:4d} {st['unsolved']:5d}  {credit[name] / max(n, 1):.2f}")
+
+
+def summarize_traces(out: Path, packs: list[Path]) -> None:
+    """--mock: per family and agent, the lanes, reading paths and how often the evidence reached the packet."""
+    # The scorer renames every pair before seeding, so evidence is matched by the start of its prompt,
+    # which the trace keeps for each packet record.
+    cases, prompt = {}, {}
+    for pack in packs:
+        p = json.loads(pack.read_text())
+        for wave in p["memory_waves"]:
+            for pair in wave["pairs"]:
+                prompt[pair["pair_id"]] = pair["prompt"][:120]
+        for c in p["cases"]:
+            cases[(pack.stem, c["question"].strip())] = c
+    rows = collections.defaultdict(lambda: collections.defaultdict(lambda: {"lane": collections.Counter(),
+                                                                          "path": collections.Counter(),
+                                                                          "hit": [], "n": 0}))
+    for trace in glob.glob(str(out / "trace" / "*" / "*" / "trace.jsonl")):
+        tag, agent = Path(trace).parent.parent.name, Path(trace).parent.name
+        stem = tag.rsplit("-r", 1)[0]
+        for line in open(trace):
+            t = json.loads(line)
+            c = cases.get((stem, str(t.get("user_input", "")).strip()))
+            if c is None:
+                continue
+            r = rows[family(c["id"])][agent]
+            r["n"] += 1
+            r["lane"][str(t.get("lane", "?")).split(":")[0] + ":" + str(t.get("lane", "?")).split(":")[-1]] += 1
+            r["path"][str(t.get("path") or "-")] += 1
+            packet = t.get("packet") or []
+            shown = {p[1][:120] for p in packet if isinstance(p, list) and len(p) > 1}
+            ev = c["evidence_pair_ids"]
+            r["hit"].append(sum(prompt[e] in shown for e in ev) / len(ev))
+    for name in sorted(rows):
+        print(name)
+        for agent, r in sorted(rows[name].items()):
+            lanes = ", ".join(f"{k} {v}" for k, v in r["lane"].most_common(2))
+            paths = ", ".join(f"{k} {v}" for k, v in r["path"].most_common(2))
+            hit = sum(r["hit"]) / len(r["hit"]) if r["hit"] else 0
+            print(f"    {agent:10s} n={r['n']:<3d} evidence in packet {hit:4.0%}   lanes: {lanes}   paths: {paths}")
+    # The families the agents take apart before any model reads them: different lanes or paths, or the
+    # evidence reaching one packet and not the other. These are the line splitters.
+    print("\nwhere the agents differ before the model:")
+    for name in sorted(rows):
+        by = rows[name]
+        lanes = {a: r["lane"] for a, r in by.items()}
+        hits = {a: sum(r["hit"]) / len(r["hit"]) for a, r in by.items() if r["hit"]}
+        if len({tuple(sorted(c.items())) for c in lanes.values()}) > 1 or (hits and max(hits.values()) - min(hits.values()) > 0.05):
+            print(f"    {name:40s} " + "   ".join(f"{a}: {dict(lanes[a])} {hits.get(a, 0):.0%}" for a in sorted(by)))
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--image", default="ditto-harness:combined-tool4")
+    ap.add_argument("--agent", action="append", default=[], type=lambda s: tuple(s.split("=", 1)),
+                    help="id=image-tag (ditto-harness:<tag>); repeat for each panel agent")
+    ap.add_argument("--mock", action="store_true", help="free routing bench: fake model and embeddings, traces only")
     ap.add_argument("--dir", type=Path, default=HERE / "generator")
     ap.add_argument("--seeds", type=int, default=1)
     ap.add_argument("--seed", type=int, default=1, help="first rehearsal seed")
-    ap.add_argument("--cases", type=int, default=16)
+    ap.add_argument("--cases", type=int, default=80)
+    ap.add_argument("--repeats", type=int, default=1, help="runs of each pack, to see sampling noise")
+    ap.add_argument("--round-bench", type=int, default=15)
+    ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--harness-port", type=int, default=8180,
-                    help="8080 is left to tools/practice_docker.py, so both can run at once")
+                    help="first harness port; 8080 is left to tools/practice_docker.py")
     ap.add_argument("--env-file", type=Path, default=HERE / ".env.local")
-    ap.add_argument("--summarize", type=Path, help="only print the table for an existing run.json")
+    ap.add_argument("--summarize", type=Path, help="only print the tables for an existing run folder")
     args = ap.parse_args()
     if args.summarize:
-        summarize(json.loads(args.summarize.read_text()))
+        if not args.summarize.name.endswith("-mock"):
+            summarize(args.summarize)
+        summarize_traces(args.summarize, sorted((args.summarize / "packs").glob("*.json")))
         return 0
+    if not args.agent:
+        ap.error("give at least one --agent id=image")
 
-    key = pd.load_env_file(args.env_file).get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API_KEY", "")
-    if not key.strip():
-        print(f"OPENROUTER_API_KEY missing: put it in {args.env_file}", file=sys.stderr)
-        return 2
+    key = "mock"
+    if not args.mock:
+        key = pd.load_env_file(args.env_file).get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API_KEY", "")
+        if not key.strip():
+            print(f"OPENROUTER_API_KEY missing: put it in {args.env_file}", file=sys.stderr)
+            return 2
     if not SCORER.is_file():
         subprocess.run(["go", "build", "-o", str(SCORER), "./cmd/challenge-scorer"], cwd=API_DIR, check=True)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    out_dir = HERE / "practice" / "generator" / stamp
-    out_dir.mkdir(parents=True, exist_ok=True)
-    (embed_port,) = pd.lr.reserve_ports(1)
-    harness_url = f"http://127.0.0.1:{args.harness_port}"
-    container = f"ditto-generator-{args.harness_port}"
+    out = HERE / "practice" / "generator" / (stamp + ("-mock" if args.mock else ""))
+    out.mkdir(parents=True, exist_ok=True)
+    packs = rehearse(args, out)
     child_env = dict(os.environ, OPENROUTER_API_KEY=key)
     shim = None
-    try:
+    if args.mock:
+        model_url = embed_url = serve(FakeModel)
+    else:
+        model_url = ""
+        (embed_port,) = pd.lr.reserve_ports(1)
+        embed_url = f"http://127.0.0.1:{embed_port}"
         shim = subprocess.Popen(
             [sys.executable, str(HERE / "tools" / "embed_shim.py"), "--port", str(embed_port)],
             env=child_env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-        # the key goes in through the environment, not the command line
-        subprocess.run(
-            ["docker", "run", "-d", "--rm", "--name", container, "--network", "host",
-             "-e", f"PORT={args.harness_port}", "-e", "DITTOBENCH_PROVIDER=openrouter",
-             "-e", "DITTOBENCH_MODEL=openai/gpt-oss-20b", "-e", "OPENROUTER_API_KEY",
-             "-e", f"OLLAMA_BASE_URL=http://127.0.0.1:{embed_port}",
-             "-e", "DITTOBENCH_DB=/tmp/practice.db", args.image],
-            env=child_env, check=True, stdout=subprocess.DEVNULL)
-        pd.wait_http(f"http://127.0.0.1:{embed_port}/health")
-        pd.wait_http(f"{harness_url}/health")
-        print(f"{args.image}: {args.seeds} seed(s) x {args.cases} cases", flush=True)
-        run_json = out_dir / "run.json"
-        subprocess.run(
-            [str(SCORER), "run", "-dir", str(args.dir), "-hotkey", TEST_HOTKEY, "-sandbox", "local",
-             "-seeds", str(args.seeds), "-seed", str(args.seed), "-cases", str(args.cases),
-             "-agent", f"horizon={start_proxy(harness_url)},owner=us", "-out", str(run_json)],
-            cwd=API_DIR, check=True)
-        summarize(json.loads(run_json.read_text()))
-        print(f"saved {out_dir}")
+        pd.wait_http(f"{embed_url}/health")
+    try:
+        for pack in packs:
+            for rep in range(args.repeats):
+                tag = f"{pack.stem}-r{rep}"
+                started = start_agents(args, out, tag, child_env, model_url, embed_url)
+                try:
+                    print(f"{tag}: {len(started)} agents", flush=True)
+                    cmd = [str(SCORER), "run", "-pack", str(pack), "-concurrency", str(args.concurrency),
+                           "-out", str(out / f"run-{tag}.json")]
+                    for agent, url, _ in started:
+                        cmd += ["-agent", f"{agent}={url},owner={agent}"]
+                    subprocess.run(cmd, cwd=API_DIR, check=True)
+                finally:
+                    stop_agents(out, tag, started)
+        if not args.mock:
+            summarize(out)
+        summarize_traces(out, packs)
+        print(f"saved {out}")
         return 0
     finally:
-        logs = subprocess.run(["docker", "logs", container], capture_output=True, text=True)
-        (out_dir / "harness.log").write_text(pd.redact(logs.stdout + logs.stderr))
-        subprocess.run(["docker", "rm", "-f", container], capture_output=True)
-        pd.lr.stop_process(shim)
+        if shim:
+            pd.lr.stop_process(shim)
 
 
 if __name__ == "__main__":

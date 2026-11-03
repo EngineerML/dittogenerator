@@ -9,23 +9,54 @@ are at hand.
 
 ## Layout
 
-The builder, the value pools and `main.go` come from the public starter kit
-(`repos/ditto-subnet/miners/dittobench-generator-starter-kit`, MIT, see LICENSE.starter-kit).
-The families are ours. The kit's own four families are dropped: they are 76/76 trivial in real
-rounds, and repeating them would only collect duplicates.
+`main.go` and the builder's shape come from the public starter kit
+(`repos/ditto-subnet/miners/dittobench-generator-starter-kit`, MIT, see LICENSE.starter-kit). The
+rest is ours (version 3):
 
-All four families state the gold value plainly, then change what is true in a later message
-that never names the value again:
+| File | What |
+|---|---|
+| `families/builder.go` | eight waves, opaque pair and session IDs, reserved values and people, case-file IDs, timestamps |
+| `families/text.go` | a small grammar (`#key#` alternatives, values filled in after), subjects per path, renderers (chat, forwarded email, forwarded text, sheet row, long multi-paragraph note), letter-swap noise that never touches a value |
+| `families/chains.go`, `joins.go`, `splitters.go` | the fifteen families |
+| `families/pools.go`, `prose.go` | values and the text around them |
 
-| Family | What happens | Gold |
-|---|---|---|
-| `revert` | an event moves city two or three times, then "back to the very beginning" or "undo the last change" | the first, or the middle, city |
-| `swapped` | two people's allergies, later "I had them the wrong way round" | the food first given for the other person |
-| `picked` | two people suggest a city, later "we went with X's idea" (one variant: X revised their suggestion first) | the winner's latest city |
-| `elimination` | three drinks shortlisted, two ruled out in separate messages | the one never ruled out |
+The packs declare the newest grading policy the request accepts (15 in a bench-15 round).
 
-Six waves, about 360 pairs at 80 cases; every family draws reserved names and values, so cases
-in one pack never collide.
+### Paths
+
+The top agents route a memory question on surface features before they read anything: a long
+identifier carried by at least three records sends it to their case-file (program) path, a phrase
+shared with at least three multi-paragraph notes to their topic path, a full name to the records
+lane. Each path reads chains with its own rules. Most families rotate one case per round over the
+three paths (`records`, `program`, `topic`), and the path is the last part of the case's family
+name in every summary.
+
+### Families
+
+Built from the agent research in /home/bittensor/ditto (v15_atlas, notes 2026-11-01 to 2026-11-03):
+the shapes there that gpt-oss-20b agents get right 20 to 80 percent of the time, and the places the
+DrPresident and dan0l lines route the same question differently.
+
+| Group | Family | What happens | Gold |
+|---|---|---|---|
+| chain | `revert-previous` | three or four moves, then "reverts to the previous entry instead; the newest entry governs" (hard) or a plainer undo | the city before the last move |
+| chain | `revert-original` | two or three moves, then "back to the city we had at the very start" | the first city |
+| chain | `struck-entry` | the location worded differently in each entry, then the latest entry "logged in error" | the city before it |
+| chain | `misplaced-cue` | a draft "update" that sign-off turns down, or a plain move followed by a declined proposal | the city that stands |
+| chain | `membership-fold` | four people, then a removal, an addition, a swap (and a re-add), asked "after the change" | the final list |
+| chain | `event-order` | five milestones, two dated only relative to another, filed in random waves | the one right before a named milestone |
+| join | `as-of` | three dated locations | the one that held on a day inside the middle interval |
+| join | `forwarded` | a dated move, then an older message forwarded last | the moved-to city |
+| join | `nickname-email` | an email changed in a note that uses only the person's nickname | the new email |
+| join | `initials-contact` | a thread handed to "C. Nilsen", with a directory holding a namesake | the new holder's email |
+| join | `owner-firm` | a contract moved to a firm whose coordinator is named in the same note, asked "who holds it" | the firm |
+| splitter | `decided` | two cities weighed, a third suggested, one agreed; asked "remind me what we decided" | the agreed city |
+| splitter | `live-status` | three multi-word states; asked for "the up-to-date status" | the latest state |
+| splitter | `typo-contact` | a handover in long notes, emails on short cards; asked "whats the emial" (or cleanly) | the new runner's email |
+| splitter | `handover` | a thread handed over with "took over", "run point", "has the ball" or "owns", and a third person cc'd | the new holder |
+
+Every wrong value a case's memory holds is listed as a distractor, so a reply that names it scores
+0 and a memory dump fails.
 
 ## Checks
 
@@ -37,13 +68,19 @@ go run ./cmd/challenge rehearse -dir ../../../../generator \
 ```
 
 Rounds have opened at bench 15 since 2026-11-03 and accept packs graded at 14 or 15 only, so
-rehearse with `-round-bench 15`. Built against the datagen at 29784200 the packs declare 14, the
-baseline the request offers. `challenge-scorer run -dir` sends the original v13 request, so to
-grade a panel run the way a live round does, rehearse with `-out-dir` and run that pack with
-`challenge-scorer run -pack`.
+rehearse with `-round-bench 15`; version 3 packs then declare 15. `challenge-scorer run -dir`
+sends the original v13 request, so the panel tool rehearses at the round's bench with `-out-dir`
+and runs each pack with `challenge-scorer run -pack`.
 
-`tools/generator_panel.py` runs the packs against one of our agent images with the official
-challenge scorer (paid: OpenRouter) and prints solved/mean per family.
+`tools/generator_panel.py` runs the packs against a local panel of agent images with the
+official challenge scorer and prints, per family and path, each agent's solved/n and mean and the
+panel's discriminating/trivial/unsolved split (paid: OpenRouter, about $0.003 per case per agent).
+With `--mock` it is free: a fake model and fake embeddings stand in, and the traced images record
+per case the lane, the reading path and whether the evidence records reached the model.
+
+```bash
+python3 tools/generator_panel.py --mock --agent drp=drp23v15 --agent dan0l=v30-released --seeds 1
+```
 
 ## Results against our own agent (horizon v2 image, one seed, 80 cases)
 

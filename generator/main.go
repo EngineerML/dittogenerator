@@ -24,8 +24,13 @@ import (
 // Name and Version identify this generator in the pack's provenance.
 const (
 	Name    = "horizon"
-	Version = "2"
+	Version = "3"
 )
+
+// GradingBenchVersions are the pack grading policies our families are
+// written for. The pack declares the newest one the request accepts: rounds
+// at bench 15 accept 14 and 15 only.
+var GradingBenchVersions = []int{challenge.GradingBenchVersion, challenge.GradingBenchVersionV14, challenge.GradingBenchVersionV15}
 
 // MaxCases is the most cases the pools can fill without reusing a value. It
 // matches challenge.MaxCases, the most cases_per_seed Platform can set: a
@@ -49,7 +54,9 @@ func Generate(req challenge.GenerateRequest) (challenge.Pack, error) {
 			b.Filler()
 		}
 	}
-	return b.Pack(req, Name, Version), nil
+	pack := b.Pack(req, Name, Version)
+	pack.GradingBenchVersion = req.NewestAccepted(GradingBenchVersions)
+	return pack, nil
 }
 
 func main() {
