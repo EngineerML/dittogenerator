@@ -33,8 +33,14 @@ in one pack never collide.
 cd generator && go vet ./... && go test ./...      # every size 8..80 validates on several seeds
 cd repos/ditto-subnet/research/dittobench-datagen
 go run ./cmd/challenge rehearse -dir ../../../../generator \
-  -hotkey 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY -seeds 3 -cases 80
+  -hotkey 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY -seeds 3 -cases 80 -round-bench 15
 ```
+
+Rounds have opened at bench 15 since 2026-11-03 and accept packs graded at 14 or 15 only, so
+rehearse with `-round-bench 15`. Built against the datagen at 29784200 the packs declare 14, the
+baseline the request offers. `challenge-scorer run -dir` sends the original v13 request, so to
+grade a panel run the way a live round does, rehearse with `-out-dir` and run that pack with
+`challenge-scorer run -pack`.
 
 `tools/generator_panel.py` runs the packs against one of our agent images with the official
 challenge scorer (paid: OpenRouter) and prints solved/mean per family.
