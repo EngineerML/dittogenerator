@@ -66,6 +66,19 @@ def load(run_dir: Path):
         for seed in d["score"]["seeds"]:
             for c in seed["cases"]:
                 status.setdefault(c["case_id"], collections.Counter())[c["status"]] += 1
+    # A run stopped before the scorer wrote its results: tools/gradetraces grades the saved replies.
+    scored = {rep for s in scores.values() for (_, rep) in s}
+    for graded in sorted(run_dir.glob("graded-*.json")):
+        rep = graded.stem.rsplit("-", 1)[-1]
+        if rep in scored:
+            continue
+        for agent, per_case in json.loads(graded.read_text())["scores"].items():
+            for cid, score in per_case.items():
+                scores[cid][(agent, rep)] = float(score)
+    for cid, got in scores.items():
+        if cid not in status:
+            solved = sum(s >= 0.5 for s in got.values())
+            status[cid] = collections.Counter({f"{solved}/{len(got)} runs solved": 1})
 
     traces = {}  # (case_id, agent, rep) -> trace row
     for f in sorted((run_dir / "trace").glob("*/*/trace.jsonl")):
