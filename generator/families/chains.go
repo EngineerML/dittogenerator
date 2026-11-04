@@ -96,7 +96,10 @@ var revertLines = Grammar{
 // the previous entry without naming it. The gold is the city before the last
 // move.
 func RevertPrevious(b *Builder, i int) challenge.Case {
-	path := pathFor(i, 0)
+	// Always the records lane: there the unnamed revert splits the agents (mid
+	// 5 of 12, soft 10 of 12, panel 2026-11-04), while long topic notes bury
+	// the revert line (mid 0 of 12) and case files make the soft form trivial.
+	path := PathRecords
 	s := b.Subject(path, b.Any(events))
 	c := b.Pick(cities, 3+i%2)
 	w := b.Spread(len(c) + 1)

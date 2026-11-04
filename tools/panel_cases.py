@@ -41,60 +41,73 @@ def family(case_id: str) -> str:
     return re.sub(r"-\d+$", "", case_id)
 
 
-def load(run_dir: Path):
-    pack_path = sorted((run_dir / "packs").glob("*.json"))[0]
-    pack = json.loads(pack_path.read_text())
-    prompt = {pair["pair_id"]: pair["prompt"][:120] for wave in pack["memory_waves"] for pair in wave["pairs"]}
-    wave_of = {pair["pair_id"]: w for w, wave in enumerate(pack["memory_waves"]) for pair in wave["pairs"]}
-    cases = {c["id"]: c for c in pack["cases"]}
-    for c in cases.values():
-        waves = sorted(wave_of[e] for e in c["evidence_pair_ids"] if e in wave_of)
-        c["_waves"] = waves
-        # How far back the oldest evidence sits from the wave the case runs after, and how many records.
-        # A case run after wave 0 has no run_after_wave in the pack (the field is omitted when zero).
-        c["_after"] = c.get("run_after_wave", 0)
-        c["_span"] = f"back {c['_after'] - waves[0]}, {len(waves)} rec" if waves else "?"
-    # A question asked again after a later wave is a different case; the scorer finishes a wave's cases
-    # before seeding the next, so repeats appear in a trace in wave order.
-    by_question = collections.defaultdict(list)
-    for c in sorted(pack["cases"], key=lambda c: c.get("run_after_wave", 0)):
-        by_question[norm(c["question"])].append(c["id"])
+def stem_rep(name: str, prefix: str) -> tuple[str, str]:
+    """Split "run-<pack>-r0" (or "graded-…", or a trace folder "<pack>-r0") into pack stem and repeat."""
+    stem, rep = name[len(prefix):].rsplit("-", 1)
+    return stem, rep
 
-    scores = collections.defaultdict(dict)  # (case_id) -> {(agent, rep): score}
+
+def load(run_dir: Path):
+    # Packs from different seeds reuse case IDs for different questions, so every case is keyed by
+    # "<pack stem>/<case id>".
+    cases, prompt, by_question = {}, {}, {}
+    for pack_path in sorted((run_dir / "packs").glob("*.json")):
+        stem, pack = pack_path.stem, json.loads(pack_path.read_text())
+        wave_of = {}
+        for w, wave in enumerate(pack["memory_waves"]):
+            for pair in wave["pairs"]:
+                prompt[f"{stem}/{pair['pair_id']}"] = pair["prompt"][:120]
+                wave_of[pair["pair_id"]] = w
+        for c in pack["cases"]:
+            waves = sorted(wave_of[e] for e in c["evidence_pair_ids"] if e in wave_of)
+            c["_stem"], c["_waves"] = stem, waves
+            # A case run after wave 0 has no run_after_wave in the pack (the field is omitted when zero).
+            c["_after"] = c.get("run_after_wave", 0)
+            # How far back the oldest evidence sits from the wave the case runs after, and how many records.
+            c["_span"] = f"back {c['_after'] - waves[0]}, {len(waves)} rec" if waves else "?"
+            cases[f"{stem}/{c['id']}"] = c
+        # A question asked again after a later wave is a different case; the scorer finishes a wave's
+        # cases before seeding the next, so repeats appear in a trace in wave order.
+        same = collections.defaultdict(list)
+        for c in sorted(pack["cases"], key=lambda c: c["_after"]):
+            same[norm(c["question"])].append(f"{stem}/{c['id']}")
+        by_question[stem] = same
+
+    scores = collections.defaultdict(dict)  # "<stem>/<case id>" -> {(agent, rep): score}
     status = {}
     for run in sorted(run_dir.glob("run-*.json")):
-        rep = run.stem.rsplit("-", 1)[-1]
+        stem, rep = stem_rep(run.stem, "run-")
         d = json.loads(run.read_text())
         for seed in d["input"]["seeds"]:
             for slot in seed["panel"]:
                 for r in slot["results"]:
-                    scores[r["case_id"]][(slot["agent_id"], rep)] = float(r["score"])
+                    scores[f"{stem}/{r['case_id']}"][(slot["agent_id"], rep)] = float(r["score"])
         for seed in d["score"]["seeds"]:
             for c in seed["cases"]:
-                status.setdefault(c["case_id"], collections.Counter())[c["status"]] += 1
+                status.setdefault(f"{stem}/{c['case_id']}", collections.Counter())[c["status"]] += 1
     # A run stopped before the scorer wrote its results: tools/gradetraces grades the saved replies.
-    scored = {rep for s in scores.values() for (_, rep) in s}
+    scored = {(cid.split("/")[0], rep) for cid, s in scores.items() for (_, rep) in s}
     for graded in sorted(run_dir.glob("graded-*.json")):
-        rep = graded.stem.rsplit("-", 1)[-1]
-        if rep in scored:
+        stem, rep = stem_rep(graded.stem, "graded-")
+        if (stem, rep) in scored:
             continue
         for agent, per_case in json.loads(graded.read_text())["scores"].items():
             for cid, score in per_case.items():
-                scores[cid][(agent, rep)] = float(score)
+                scores[f"{stem}/{cid}"][(agent, rep)] = float(score)
     for cid, got in scores.items():
         if cid not in status:
             solved = sum(s >= 0.5 for s in got.values())
             status[cid] = collections.Counter({f"{solved}/{len(got)} runs solved": 1})
 
-    traces = {}  # (case_id, agent, rep) -> trace row
+    traces = {}  # ("<stem>/<case id>", agent, rep) -> trace row
     for f in sorted((run_dir / "trace").glob("*/*/trace.jsonl")):
-        rep, agent = f.parent.parent.name.rsplit("-", 1)[-1], f.parent.name
+        (stem, rep), agent = stem_rep(f.parent.parent.name, ""), f.parent.name
         asked = collections.Counter()
         for line in f.read_text().splitlines():
             if line.strip():
                 row = json.loads(line)
                 q = norm(row.get("user_input"))
-                same = by_question.get(q) or []
+                same = by_question.get(stem, {}).get(q) or []
                 if same:
                     traces[(same[min(asked[q], len(same) - 1)], agent, rep)] = row
                 asked[q] += 1
@@ -106,7 +119,8 @@ def explain(case: dict, prompt: dict, row: dict | None, score: float | None) -> 
         return "no trace", ""
     reply = (row.get("final_text") or "").strip()
     seen = {p[1][:120] for p in row.get("packet") or []}
-    evidence = [prompt[e] for e in case["evidence_pair_ids"] if e in prompt]
+    ids = [f"{case['_stem']}/{e}" for e in case["evidence_pair_ids"]]
+    evidence = [prompt[e] for e in ids if e in prompt]
     have = sum(e in seen for e in evidence)
     decoys = [d for d in case.get("distractor_answers") or [] if d and mentions(reply, d)]
     gold = mentions(reply, case["expected_answer"])
@@ -151,7 +165,7 @@ def main() -> int:
             score = scores[cid].get((agent, rep))
             cause, where = explain(case, prompt, traces.get((cid, agent, rep)), score)
             got[(agent, rep)] = (score, cause, where)
-            causes[family(cid)][agent][cause.split(" ")[0]] += 1
+            causes[family(case["id"])][agent][cause.split(" ")[0]] += 1
             if cause != "no trace":
                 by_type[case["question_type"]][agent].append(cause == "pass")
                 back = case.get("run_after_wave", 0) - case["_waves"][0] if case["_waves"] else -1

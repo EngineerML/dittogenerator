@@ -166,7 +166,10 @@ def rehearse(args, out: Path) -> list[Path]:
         prefixes = tuple(x.strip() for x in args.only.split(",") if x.strip())
         for path in paths:
             pack = json.loads(path.read_text())
-            pack["cases"] = [c for c in pack["cases"] if c["id"].startswith(prefixes)]
+            keep = [c for c in pack["cases"] if c["id"].startswith(prefixes)]
+            # A pack holds at least 8 cases; top a small selection up with the pack's other cases.
+            keep += [c for c in pack["cases"] if not c["id"].startswith(prefixes)][:max(0, 8 - len(keep))]
+            pack["cases"] = keep
             path.write_text(json.dumps(pack))
             print(f"{path.stem}: asking {len(pack['cases'])} cases matching {', '.join(prefixes)}", flush=True)
     return paths
