@@ -45,7 +45,13 @@ def load(run_dir: Path):
     pack_path = sorted((run_dir / "packs").glob("*.json"))[0]
     pack = json.loads(pack_path.read_text())
     prompt = {pair["pair_id"]: pair["prompt"][:120] for wave in pack["memory_waves"] for pair in wave["pairs"]}
+    wave_of = {pair["pair_id"]: w for w, wave in enumerate(pack["memory_waves"]) for pair in wave["pairs"]}
     cases = {c["id"]: c for c in pack["cases"]}
+    for c in cases.values():
+        waves = sorted(wave_of[e] for e in c["evidence_pair_ids"] if e in wave_of)
+        c["_waves"] = waves
+        # How far back the oldest evidence sits from the wave the case runs after, and how many records.
+        c["_span"] = f"back {c['run_after_wave'] - waves[0]}, {len(waves)} rec" if waves else "?"
     by_question = {norm(c["question"]): c["id"] for c in pack["cases"]}
 
     scores = collections.defaultdict(dict)  # (case_id) -> {(agent, rep): score}
@@ -112,7 +118,9 @@ def main() -> int:
     agents = sorted({a for a, _ in runs})
 
     causes = collections.defaultdict(lambda: collections.defaultdict(collections.Counter))
-    lines = [f"# Panel cases: {args.run_dir.name}", "",
+    by_type = collections.defaultdict(lambda: collections.defaultdict(list))
+    by_span = collections.defaultdict(lambda: collections.defaultdict(list))
+    lines =[f"# Panel cases: {args.run_dir.name}", "",
              "Cause per agent run (`agent/rN`): pass, missing k/n (evidence not in the packet), "
              "decoy X, gold+decoy X, declined, other.", ""]
     for cid, case in cases.items():
@@ -122,13 +130,22 @@ def main() -> int:
             cause, where = explain(case, prompt, traces.get((cid, agent, rep)), score)
             got[(agent, rep)] = (score, cause, where)
             causes[family(cid)][agent][cause.split(" ")[0]] += 1
+            if cause != "no trace":
+                by_type[case["question_type"]][agent].append(cause == "pass")
+                back = case["run_after_wave"] - case["_waves"][0] if case["_waves"] else -1
+                far = "0-1" if back <= 1 else "2-3" if back <= 3 else "4-5" if back <= 5 else "6-7"
+                many = len(case["_waves"])
+                by_span[f"oldest evidence {far} waves back"][agent].append(cause == "pass")
+                by_span[f"evidence in {many if many < 4 else '4+'} records"][agent].append(cause == "pass")
         passed = {a for (a, _), (s, c, _) in got.items() if c == "pass"}
         if not args.all and (not passed or passed == set(agents)):
             continue
         st = ", ".join(f"{k} {v}" for k, v in sorted(status.get(cid, {}).items())) or "not scored yet"
         lines += [f"## {cid}  ({st})", "",
                   f"- question: {case['question']}",
-                  f"- gold: {case['expected_answer']}; decoys: {', '.join(case.get('distractor_answers') or [])}", ""]
+                  f"- gold: {case['expected_answer']}; decoys: {', '.join(case.get('distractor_answers') or [])}",
+                  f"- type {case['question_type']}; evidence in waves {case['_waves']} ({case['_span']}), "
+                  f"asked after wave {case['run_after_wave']}", ""]
         for (agent, rep), (score, cause, where) in got.items():
             reply = (traces.get((cid, agent, rep)) or {}).get("final_text") or ""
             shown = "-" if score is None else f"{score:.2f}"
@@ -142,6 +159,11 @@ def main() -> int:
             c = causes[fam][a]
             cells.append(" ".join(f"{k[:4]}{v}" for k, v in c.most_common()) or "-")
         print(f"{fam:34s} " + " ".join(f"{c:>24s}" for c in cells))
+    for title, table in (("question type", by_type), ("evidence distance", by_span)):
+        print(f"\npassed by {title}")
+        for key in sorted(table):
+            cells = [f"{sum(table[key][a])}/{len(table[key][a])}" if table[key][a] else "-" for a in agents]
+            print(f"  {key:44s} " + " ".join(f"{c:>9s}" for c in cells))
     out = args.run_dir / "cases.md"
     out.write_text("\n".join(lines) + "\n")
     print(f"\nwrote {out}")
