@@ -68,9 +68,16 @@ func valueCase(kind string, path Path, i int, question, gold string, distractors
 func pathFor(i, offset int) Path { return Path((i + offset) % 3) }
 
 var revertLines = Grammar{
-	// The hard wording is the benchmark's own unnamed revert; the soft ones
-	// are the forms agents got right 87 to 100 percent of the time.
-	"hard": {"From now on {s} reverts to the previous entry instead; the newest entry governs."},
+	// The benchmark's own unnamed revert ends "; the newest entry governs",
+	// and with it no local agent picked the previous city (0 of 18, panel
+	// 2026-11-04): the clause reads as an order to take the newest one. The
+	// mid forms keep the unnamed pointer without it; the soft ones are the
+	// forms agents got right 87 to 100 percent of the time.
+	"mid": {
+		"From now on {s} reverts to the previous entry instead.",
+		"{s} reverts to the previous entry.",
+		"For {s}, go back to the previous entry.",
+	},
 	"soft": {
 		"{s} goes back to the entry before the last change.",
 		"Scrap the latest change to {s} and keep what we had right before it.",
@@ -96,7 +103,7 @@ func RevertPrevious(b *Builder, i int) challenge.Case {
 	ids := cityChain(b, s, c, w)
 	variant := "soft"
 	if i%2 == 0 {
-		variant = "hard"
+		variant = "mid"
 	}
 	ev := b.Record(s, w[len(w)-1], b.Phrase(revertLines, variant, "s", s.Name))
 	gold := c[len(c)-2]

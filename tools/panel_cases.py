@@ -51,7 +51,9 @@ def load(run_dir: Path):
         waves = sorted(wave_of[e] for e in c["evidence_pair_ids"] if e in wave_of)
         c["_waves"] = waves
         # How far back the oldest evidence sits from the wave the case runs after, and how many records.
-        c["_span"] = f"back {c['run_after_wave'] - waves[0]}, {len(waves)} rec" if waves else "?"
+        # A case run after wave 0 has no run_after_wave in the pack (the field is omitted when zero).
+        c["_after"] = c.get("run_after_wave", 0)
+        c["_span"] = f"back {c['_after'] - waves[0]}, {len(waves)} rec" if waves else "?"
     # A question asked again after a later wave is a different case; the scorer finishes a wave's cases
     # before seeding the next, so repeats appear in a trace in wave order.
     by_question = collections.defaultdict(list)
@@ -152,7 +154,7 @@ def main() -> int:
             causes[family(cid)][agent][cause.split(" ")[0]] += 1
             if cause != "no trace":
                 by_type[case["question_type"]][agent].append(cause == "pass")
-                back = case["run_after_wave"] - case["_waves"][0] if case["_waves"] else -1
+                back = case.get("run_after_wave", 0) - case["_waves"][0] if case["_waves"] else -1
                 far = "0-1" if back <= 1 else "2-3" if back <= 3 else "4-5" if back <= 5 else "6-7"
                 many = len(case["_waves"])
                 by_span[f"oldest evidence {far} waves back"][agent].append(cause == "pass")
@@ -165,7 +167,7 @@ def main() -> int:
                   f"- question: {case['question']}",
                   f"- gold: {case['expected_answer']}; decoys: {', '.join(case.get('distractor_answers') or [])}",
                   f"- type {case['question_type']}; evidence in waves {case['_waves']} ({case['_span']}), "
-                  f"asked after wave {case['run_after_wave']}", ""]
+                  f"asked after wave {case['_after']}", ""]
         for (agent, rep), (score, cause, where) in got.items():
             reply = (traces.get((cid, agent, rep)) or {}).get("final_text") or ""
             shown = "-" if score is None else f"{score:.2f}"

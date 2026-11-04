@@ -119,8 +119,7 @@ func TestRejectsUnfillableRequests(t *testing.T) {
 
 // Two cases asking the same question about the same memory have no single
 // right answer, so a question repeats only after a later wave, when the
-// memory it reads has changed (the restated family does this on purpose),
-// and never with the same gold.
+// memory it reads has changed, and never with the same gold.
 func TestQuestionsAreUnique(t *testing.T) {
 	for seed := int64(1); seed <= 40; seed++ {
 		pack, err := Generate(request(seed, MaxCases))

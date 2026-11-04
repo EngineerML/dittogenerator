@@ -57,7 +57,6 @@ type Builder struct {
 	used   map[string]bool
 	tokens map[string]bool
 	epoch  time.Time
-	limit  int
 }
 
 // NewBuilder returns an empty builder for one request.
@@ -68,7 +67,6 @@ func NewBuilder(req challenge.GenerateRequest) *Builder {
 		used:   map[string]bool{},
 		tokens: map[string]bool{},
 		epoch:  time.Date(2026, time.March, 2, 8, 0, 0, 0, time.UTC),
-		limit:  req.Cases,
 	}
 	for i := range b.waves {
 		b.waves[i].Wave = i
@@ -115,25 +113,6 @@ func (b *Builder) Add(c challenge.Case) {
 func (b *Builder) AddAt(c challenge.Case, wave int) {
 	c.RunAfterWave = wave
 	b.cases = append(b.cases, c)
-}
-
-// Spare is how many cases a family may add beyond the one it returns without
-// taking the pack past the requested count.
-func (b *Builder) Spare() int { return b.limit - len(b.cases) - 1 }
-
-// Code returns a reserved four-digit number. Years are skipped, so a code is
-// never read as a date.
-func (b *Builder) Code() string {
-	for {
-		n := 1000 + b.Rng.Intn(9000)
-		if n >= 1900 && n < 2100 {
-			continue
-		}
-		if s := fmt.Sprint(n); !b.used[s] {
-			b.used[s] = true
-			return s
-		}
-	}
 }
 
 // Pick draws n distinct values from pool that no earlier family has used, so
