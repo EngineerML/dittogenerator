@@ -44,6 +44,24 @@ SCORER = HERE / ".cache" / "challenge-scorer"
 TEST_HOTKEY = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 
 
+def check_key(key: str) -> str:
+    """Ask OpenRouter about the key before anything starts; return the problem, or "" when it is usable.
+
+    The key endpoint is free. It catches an expired or revoked key and a shell without the proxy, which
+    otherwise only show up as empty answers after the agents have spent minutes seeding."""
+    req = urllib.request.Request("https://openrouter.ai/api/v1/key", headers={"Authorization": f"Bearer {key}"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.load(resp).get("data") or {}
+    except urllib.error.HTTPError as exc:
+        return f"HTTP {exc.code} {exc.read()[:200].decode(errors='replace')}"
+    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        return f"{type(exc).__name__}: {exc} (is the proxy loaded? source /etc/profile.d/zz-proxy.sh)"
+    left = data.get("limit_remaining")
+    print(f"OpenRouter key ok, limit remaining: {'none set' if left is None else f'${left:.2f}'}", flush=True)
+    return ""
+
+
 class NullToolsProxy(http.server.BaseHTTPRequestHandler):
     """Forward to the harness, turning `"tools": null` into `[]`.
 
@@ -291,6 +309,10 @@ def main() -> int:
         key = pd.load_env_file(args.env_file).get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API_KEY", "")
         if not key.strip():
             print(f"OPENROUTER_API_KEY missing: put it in {args.env_file}", file=sys.stderr)
+            return 2
+        problem = check_key(key.strip())
+        if problem:
+            print(f"OpenRouter check failed, nothing started: {problem}", file=sys.stderr)
             return 2
     if not SCORER.is_file():
         subprocess.run(["go", "build", "-o", str(SCORER), "./cmd/challenge-scorer"], cwd=API_DIR, check=True)
