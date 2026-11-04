@@ -57,9 +57,17 @@ func run(dir string) error {
 		if err != nil {
 			return fmt.Errorf("%s: %w", path, err)
 		}
-		index := map[string]int{}
-		for i, c := range pack.Cases {
-			index[norm(c.Question)] = i
+		// A question asked again after a later wave is a different case; the scorer finishes a wave's
+		// cases before seeding the next, so repeats appear in a trace in wave order.
+		index := map[string][]int{}
+		order := make([]int, len(pack.Cases))
+		for i := range order {
+			order[i] = i
+		}
+		sort.SliceStable(order, func(x, y int) bool { return pack.Cases[order[x]].RunAfterWave < pack.Cases[order[y]].RunAfterWave })
+		for _, i := range order {
+			q := norm(pack.Cases[i].Question)
+			index[q] = append(index[q], i)
 		}
 		stem := strings.TrimSuffix(filepath.Base(path), ".json")
 		reps, _ := filepath.Glob(filepath.Join(dir, "trace", stem+"-r*"))
@@ -102,13 +110,14 @@ func run(dir string) error {
 	return nil
 }
 
-func gradeTrace(pack challenge.Pack, index map[string]int, path string) (map[string]float64, error) {
+func gradeTrace(pack challenge.Pack, index map[string][]int, path string) (map[string]float64, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 	scores := map[string]float64{}
+	asked := map[string]int{}
 	sc := bufio.NewScanner(f)
 	sc.Buffer(make([]byte, 0, 1<<20), 64<<20)
 	for sc.Scan() {
@@ -116,10 +125,13 @@ func gradeTrace(pack challenge.Pack, index map[string]int, path string) (map[str
 		if json.Unmarshal(sc.Bytes(), &row) != nil {
 			continue
 		}
-		i, ok := index[norm(row.UserInput)]
-		if !ok {
+		q := norm(row.UserInput)
+		same := index[q]
+		if len(same) == 0 {
 			continue
 		}
+		i := same[min(asked[q], len(same)-1)]
+		asked[q]++
 		answer, _ := row.Answer.(string)
 		v := grade.Memory(pack.GradingCase(i), protocol.RunResponse{FinalText: row.FinalText, Answer: answer})
 		scores[pack.Cases[i].ID] = v.Score

@@ -17,7 +17,7 @@ rest is ours (version 3):
 |---|---|
 | `families/builder.go` | eight waves, opaque pair and session IDs, reserved values and people, case-file IDs, timestamps |
 | `families/text.go` | a small grammar (`#key#` alternatives, values filled in after), subjects per path, renderers (chat, forwarded email, forwarded text, sheet row, long multi-paragraph note), letter-swap noise that never touches a value |
-| `families/chains.go`, `joins.go`, `splitters.go` | the fifteen families |
+| `families/restated.go`, `chains.go`, `joins.go`, `splitters.go` | the sixteen families |
 | `families/pools.go`, `prose.go` | values and the text around them |
 
 The packs declare the newest grading policy the request accepts (15 in a bench-15 round).
@@ -39,6 +39,7 @@ DrPresident and dan0l lines route the same question differently.
 
 | Group | Family | What happens | Gold |
 |---|---|---|---|
+| chain | `restated` | a code told three times in three waves, each telling with its own decoy (negated, reported or hypothetical) and no word saying it changed; the same question asked after the middle telling and after the last wave (and after the first, every other round) | the newest telling seen so far |
 | chain | `revert-previous` | three or four moves, then "reverts to the previous entry instead; the newest entry governs" (hard) or a plainer undo | the city before the last move |
 | chain | `revert-original` | two or three moves, then "back to the city we had at the very start" | the first city |
 | chain | `struck-entry` | the location worded differently in each entry, then the latest entry "logged in error" | the city before it |

@@ -52,7 +52,11 @@ def load(run_dir: Path):
         c["_waves"] = waves
         # How far back the oldest evidence sits from the wave the case runs after, and how many records.
         c["_span"] = f"back {c['run_after_wave'] - waves[0]}, {len(waves)} rec" if waves else "?"
-    by_question = {norm(c["question"]): c["id"] for c in pack["cases"]}
+    # A question asked again after a later wave is a different case; the scorer finishes a wave's cases
+    # before seeding the next, so repeats appear in a trace in wave order.
+    by_question = collections.defaultdict(list)
+    for c in sorted(pack["cases"], key=lambda c: c.get("run_after_wave", 0)):
+        by_question[norm(c["question"])].append(c["id"])
 
     scores = collections.defaultdict(dict)  # (case_id) -> {(agent, rep): score}
     status = {}
@@ -83,12 +87,15 @@ def load(run_dir: Path):
     traces = {}  # (case_id, agent, rep) -> trace row
     for f in sorted((run_dir / "trace").glob("*/*/trace.jsonl")):
         rep, agent = f.parent.parent.name.rsplit("-", 1)[-1], f.parent.name
+        asked = collections.Counter()
         for line in f.read_text().splitlines():
             if line.strip():
                 row = json.loads(line)
-                cid = by_question.get(norm(row.get("user_input")))
-                if cid:
-                    traces[(cid, agent, rep)] = row
+                q = norm(row.get("user_input"))
+                same = by_question.get(q) or []
+                if same:
+                    traces[(same[min(asked[q], len(same) - 1)], agent, rep)] = row
+                asked[q] += 1
     return cases, prompt, scores, status, traces
 
 

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/ditto-assistant/dittobench-datagen/challenge"
@@ -116,8 +117,10 @@ func TestRejectsUnfillableRequests(t *testing.T) {
 	}
 }
 
-// Every case question must be unique within a pack: two cases asking the same
-// question about the same memory have no single right answer.
+// Two cases asking the same question about the same memory have no single
+// right answer, so a question repeats only after a later wave, when the
+// memory it reads has changed (the restated family does this on purpose),
+// and never with the same gold.
 func TestQuestionsAreUnique(t *testing.T) {
 	for seed := int64(1); seed <= 40; seed++ {
 		pack, err := Generate(request(seed, MaxCases))
@@ -125,11 +128,17 @@ func TestQuestionsAreUnique(t *testing.T) {
 			t.Fatal(err)
 		}
 		seen := map[string]string{}
+		golds := map[string]string{}
 		for _, c := range pack.Cases {
-			if prior, dup := seen[c.Question]; dup {
-				t.Fatalf("seed %d: %s and %s both ask %q", seed, prior, c.ID, c.Question)
+			key := fmt.Sprintf("%d\x00%s", c.RunAfterWave, c.Question)
+			if prior, dup := seen[key]; dup {
+				t.Fatalf("seed %d: %s and %s both ask %q after wave %d", seed, prior, c.ID, c.Question, c.RunAfterWave)
 			}
-			seen[c.Question] = c.ID
+			seen[key] = c.ID
+			if prior, dup := golds[c.Question+"\x00"+c.ExpectedAnswer]; dup {
+				t.Fatalf("seed %d: %s and %s ask %q with the same gold", seed, prior, c.ID, c.Question)
+			}
+			golds[c.Question+"\x00"+c.ExpectedAnswer] = c.ID
 		}
 	}
 }

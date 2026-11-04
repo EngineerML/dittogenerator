@@ -159,7 +159,17 @@ def rehearse(args, out: Path) -> list[Path]:
     subprocess.run(["go", "run", "./cmd/challenge", "rehearse", "-dir", str(args.dir), "-hotkey", TEST_HOTKEY,
                     "-seeds", str(args.seeds), "-seed", str(args.seed), "-cases", str(args.cases),
                     "-round-bench", str(args.round_bench), "-out-dir", str(packs)], cwd=DATAGEN_DIR, check=True)
-    return sorted(packs.glob("*.json"))
+    paths = sorted(packs.glob("*.json"))
+    if args.only:
+        # Keep the whole haystack, so the agents read exactly what a round would seed, and ask only the
+        # cases under test: a paid check of one family costs a fraction of the full pack.
+        prefixes = tuple(x.strip() for x in args.only.split(",") if x.strip())
+        for path in paths:
+            pack = json.loads(path.read_text())
+            pack["cases"] = [c for c in pack["cases"] if c["id"].startswith(prefixes)]
+            path.write_text(json.dumps(pack))
+            print(f"{path.stem}: asking {len(pack['cases'])} cases matching {', '.join(prefixes)}", flush=True)
+    return paths
 
 
 def start_agents(args, out: Path, tag: str, env: dict, model_url: str, embed_url: str) -> list[tuple[str, str, str]]:
@@ -240,17 +250,23 @@ def summarize_traces(out: Path, packs: list[Path]) -> None:
         for wave in p["memory_waves"]:
             for pair in wave["pairs"]:
                 prompt[pair["pair_id"]] = pair["prompt"][:120]
-        for c in p["cases"]:
-            cases[(pack.stem, c["question"].strip())] = c
+        for c in sorted(p["cases"], key=lambda c: c.get("run_after_wave", 0)):
+            cases.setdefault((pack.stem, c["question"].strip()), []).append(c)
     rows = collections.defaultdict(lambda: collections.defaultdict(lambda: {"lane": collections.Counter(),
                                                                           "path": collections.Counter(),
                                                                           "hit": [], "n": 0}))
     for trace in glob.glob(str(out / "trace" / "*" / "*" / "trace.jsonl")):
         tag, agent = Path(trace).parent.parent.name, Path(trace).parent.name
         stem = tag.rsplit("-r", 1)[0]
+        asked = collections.Counter()
         for line in open(trace):
             t = json.loads(line)
-            c = cases.get((stem, str(t.get("user_input", "")).strip()))
+            # A question asked again after a later wave is a different case; the scorer finishes a wave's
+            # cases before seeding the next, so repeats appear in the trace in wave order.
+            key = (stem, str(t.get("user_input", "")).strip())
+            same = cases.get(key) or []
+            c = same[min(asked[key], len(same) - 1)] if same else None
+            asked[key] += 1
             if c is None:
                 continue
             r = rows[family(c["id"])][agent]
@@ -290,6 +306,7 @@ def main() -> int:
     ap.add_argument("--cases", type=int, default=80)
     ap.add_argument("--repeats", type=int, default=1, help="runs of each pack, to see sampling noise")
     ap.add_argument("--round-bench", type=int, default=15)
+    ap.add_argument("--only", help="ask only cases whose id starts with one of these comma-separated prefixes")
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--harness-port", type=int, default=8180,
                     help="first harness port; 8080 is left to tools/practice_docker.py")

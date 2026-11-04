@@ -10,7 +10,7 @@ type Family func(b *Builder, i int) challenge.Case
 // then the wording splitters, so any pack size keeps the mix close to
 // 40/35/25.
 var Default = []Family{
-	RevertPrevious, RevertOriginal, StruckEntry, MisplacedCue, MembershipFold, EventOrder,
+	Restated, RevertPrevious, RevertOriginal, StruckEntry, MisplacedCue, MembershipFold, EventOrder,
 	AsOf, ForwardedOld, NicknameEmail, InitialsContact, OwnerFirm,
 	Decided, LiveStatus, TypoContact, Handover,
 }
