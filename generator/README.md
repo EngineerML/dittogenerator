@@ -20,7 +20,9 @@ rest is ours (version 3):
 | `families/chains.go`, `joins.go`, `splitters.go` | the fifteen families |
 | `families/pools.go`, `prose.go` | values and the text around them |
 
-The packs declare the newest grading policy the request accepts (15 in a bench-15 round).
+The packs declare the newest grading policy the request accepts that this generator knows (13 to
+15): 15 in a bench-15 or bench-16 round. A bench-16 round accepts 15 and 16, and policy 16 grades
+exactly like 15, so declaring 16 would change nothing.
 
 ### Paths
 
@@ -67,8 +69,11 @@ go run ./cmd/challenge rehearse -dir ../../../../generator \
   -hotkey 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY -seeds 3 -cases 80 -round-bench 15
 ```
 
-Rounds have opened at bench 15 since 2026-11-03 and accept packs graded at 14 or 15 only, so
-rehearse with `-round-bench 15`; version 3 packs then declare 15. `challenge-scorer run -dir`
+Rounds have opened at bench 15 since 2026-11-03 (packs graded at 14 or 15), and the bench 16
+(dueling) rollout opened on 2026-11-04 (15 or 16). Rehearse with `-round-bench 15`, which grades
+like a bench-16 round; the packs then declare 15. In bench 16 the top generators' columns are also
+35 cases each of every agent's composite, so their source is published after an embargo.
+`challenge-scorer run -dir`
 sends the original v13 request, so the panel tool rehearses at the round's bench with `-out-dir`
 and runs each pack with `challenge-scorer run -pack`.
 
