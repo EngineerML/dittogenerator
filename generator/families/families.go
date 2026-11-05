@@ -6,23 +6,25 @@ import "github.com/ditto-assistant/dittobench-datagen/challenge"
 // pack; it picks the variant and the path.
 type Family func(b *Builder, i int) challenge.Case
 
-// Default is the family rotation: ten of its thirteen slots are half-credit
-// list families (lists.go), the other three the pass/fail families that split
-// the frontier panel most (Hades v26, horizon v9 and drp23v15, 2026-11-05),
-// kept so one reading fix cannot undercut the whole pack.
+// Default is the family rotation: half-credit lists only (lists.go), with the
+// links that kept full credit rarest on the frontier panel (Hades v26,
+// horizon v9 and drp23v15, 2026-11-05) in the most slots.
 //
-// With the live champion (dan0l v42) solving almost every case, a list case
-// needs only one more owner at 0.5 and keeps a low mean. Estimated credit per
-// case (tools/panel_estimate.py, five-member panel): role-list 0.56,
-// alias-list 0.54, typo-list 0.51, typo-contact 0.45, membership-fold 0.42,
-// nickname-email 0.34; about 0.31 for the pack.
+// With the live champion (dan0l v42) solving almost every case, a case needs
+// only one more owner at 0.5, and every full-credit answer raises its mean.
+// The pass/fail families were about 60% of Hades v26's full answers on a v6
+// pack; without them the estimated live score rises from about 0.31 to 0.33
+// (tools/panel_estimate.py, five-member panel). Estimated credit per case:
+// role-list 0.56 (no full credit for the Hades line), alias-list 0.54,
+// typo-list 0.51.
 //
-// Out of the rotation and kept for experiments: InitialsList (the Hades line
-// follows initials, 0.38), MisplacedCue (0.28-0.38), AsOf, Handover,
-// LiveStatus and RevertOriginal (solved by every frontier agent), and
-// RevertPrevious, StruckEntry, EventOrder, ForwardedOld, InitialsContact,
-// OwnerFirm and Decided (0.13-0.37).
+// Kept for experiments, out of the rotation: the pass/fail families that
+// split the panel best (TypoContact, MembershipFold, NicknameEmail,
+// MisplacedCue), InitialsList (the Hades line follows initials), and the
+// families every frontier agent solved or that earned little (AsOf, Handover,
+// LiveStatus, RevertOriginal, RevertPrevious, StruckEntry, EventOrder,
+// ForwardedOld, InitialsContact, OwnerFirm, Decided).
 var Default = []Family{
-	RoleList, AliasList, TypoList, RoleList, AliasList, TypoContact, RoleList,
-	AliasList, MembershipFold, RoleList, AliasList, TypoList, NicknameEmail,
+	RoleList, AliasList, RoleList, TypoList, AliasList, RoleList,
+	AliasList, RoleList, TypoList, AliasList, RoleList,
 }

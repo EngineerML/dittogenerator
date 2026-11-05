@@ -43,7 +43,8 @@ grader, policy 15) and weighed with `tools/panel_estimate.py`, which models the 
 that solves almost everything, a case needs only one more owner at 0.5, so two-item lists, where
 the easy half is worth exactly 0.5, earn about twice the credit of pass/fail cases.
 
-Ten of the thirteen rotation slots are lists (about 78% of a pack, estimated live score about 0.31). Each asks for two shops a
+The rotation is lists only (eleven slots; estimated live score about 0.33). The pass/fail families
+were about 60% of Hades v26's full-credit answers, and every full answer raises a case's mean. Each asks for two shops a
 person likes: one told under the full name, one only through a link, beside a look-alike with
 shops of their own. Naming only the first earns 0.5; hedging about the second ("and no record of a
 second one") or naming the look-alike's earns 0.
@@ -51,14 +52,12 @@ second one") or naming the look-alike's earns 0.
 | Family | Slots | The second shop is told under | Look-alike |
 |---|---|---|---|
 | `alias-list` | 4 | a nickname, bound once ("everyone calls Edith Page Pip") | a namesake (same first name) with a nickname |
-| `role-list` | 4 | a role ("the Brevant lead"), named in another record | a namesake leading another team |
+| `role-list` | 5 | a role ("the Brevant lead"), named in another record | a namesake leading another team |
 | `typo-list` | 2 | the name with two surname letters swapped ("Edith Pgae") | a real surname one letter away ("Edith Pace") |
-| `typo-contact` | 1 | pass/fail: handover in long notes, asked "whats the emial" | |
-| `membership-fold` | 1 | pass/fail: removal, addition, swap and re-add, asked "after the change" | |
-| `nickname-email` | 1 | pass/fail: an email changed in a note that quotes only the nickname | |
 
-`initials-list` (the Hades line follows initials) and `misplaced-cue` are out of the rotation and
-kept for experiments, with the families retired earlier.
+Out of the rotation and kept for experiments: the pass/fail families that split the panel best
+(`typo-contact`, `membership-fold`, `nickname-email`, `misplaced-cue`), `initials-list` (the Hades line
+follows initials), and the families retired earlier.
 
 Every wrong value a case's memory holds is listed as a distractor, so a reply that names it scores
 0 and a memory dump fails.

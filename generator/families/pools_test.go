@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-// maxRounds is the number of rounds of the thirteen rotation slots the
-// generator runs at its MaxCases (80): seven, the last one partial.
-const maxRounds = 7
+// maxRounds is the number of rounds of the eleven rotation slots the
+// generator runs at its MaxCases (80): eight, the last one partial.
+const maxRounds = 8
 
 // TestPoolsFillMaxCases holds the reserved pools to what MaxCases draws.
 // Builder.Pick panics on an exhausted pool, so an undersized pool would fail
@@ -19,12 +19,12 @@ func TestPoolsFillMaxCases(t *testing.T) {
 		perPack int
 	}{
 		"cities":     {cities, 22},
-		"projects":   {projects, 11},
+		"projects":   {projects, 10},
 		"milestones": {milestones, 5},
 		"statuses":   {statuses, 3},
 		"firms":      {firms, 2},
 		"domains":    {domains, 2},
-		"nicknames":  {nicknames, 9},
+		"nicknames":  {nicknames, 8},
 		"shopNames":  {shopNames, 8},
 	}
 	for name, n := range need {
