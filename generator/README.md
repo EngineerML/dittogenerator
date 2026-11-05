@@ -21,8 +21,9 @@ rest is ours (version 3):
 | `families/pools.go`, `prose.go` | values and the text around them |
 
 The packs declare the newest grading policy the request accepts that this generator knows (13 to
-15): 15 in a bench-15 or bench-16 round. A bench-16 round accepts 15 and 16, and policy 16 grades
-exactly like 15, so declaring 16 would change nothing.
+15), and never less than the round's own baseline: 15 in a bench-15 or bench-16 round, 16 in a
+bench-17 round (which accepts 16 and 17). Policies 16 and 17 grade exactly like 15, so the
+generator needs no change to stay accepted as rounds move up.
 
 ### Paths
 
