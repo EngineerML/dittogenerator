@@ -6,11 +6,15 @@ import "github.com/ditto-assistant/dittobench-datagen/challenge"
 // pack; it picks the variant and the path.
 type Family func(b *Builder, i int) challenge.Case
 
-// Default is the family rotation: chain families first, then indirection,
-// then the wording splitters, so any pack size keeps the mix close to
-// 40/35/25.
+// Default is the family rotation. Only the families that sat near the
+// threshold on the frontier panel (Hades v26, horizon v9 and drp23v15, two
+// repeats, 2026-11-05) stay in it, and alias-list, whose look-alike
+// distractors decide between half credit and none, gets two slots.
+//
+// Retired because every frontier agent solved them, and kept for experiments:
+// AsOf (30/30), Handover (all), LiveStatus (all) and RevertOriginal (34/36).
 var Default = []Family{
-	RevertPrevious, RevertOriginal, StruckEntry, MisplacedCue, MembershipFold, EventOrder,
-	AsOf, ForwardedOld, NicknameEmail, InitialsContact, OwnerFirm,
-	Decided, LiveStatus, TypoContact, Handover,
+	AliasList, RevertPrevious, StruckEntry, MisplacedCue, MembershipFold, EventOrder,
+	AliasList, ForwardedOld, NicknameEmail, InitialsContact, OwnerFirm,
+	Decided, TypoContact,
 }

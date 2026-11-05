@@ -133,7 +133,25 @@ var nicknames = []string{
 	"Kit", "Doc", "Ace", "Bee", "Sunny", "Moose", "Pip", "Biscuit", "Sparky",
 	"Duke", "Scout", "Rocket", "Bear", "Taz", "Jinx", "Ziggy", "Boots", "Pepper",
 	"Maverick", "Tink", "Dash", "Fizz", "Sprout", "Chip", "Bo", "Rusty", "Mojo",
-	"Noodle", "Peaches", "Gizmo",
+	"Noodle", "Peaches", "Gizmo", "Bunny", "Coco", "Dottie", "Flick", "Ginger",
+	"Honey", "Juno", "Kiki", "Lulu", "Mittens", "Nugget", "Pebbles", "Rascal", "Skip",
+	"Tiger", "Waffles", "Zippy", "Button", "Cricket", "Dimples", "Freckles",
+}
+
+// shopNames are coined first words of shop names (alias-list). Coined, so a
+// shop never matches a real word in another pool or the filler.
+var shopNames = []string{
+	"Crumbwell", "Tallowmere", "Fernhollow", "Brackenly", "Quillmoor", "Marrowby", "Pellingham",
+	"Rookwell", "Tansybrook", "Wexcombe", "Hollinshed", "Larchwick", "Mossington", "Penderleigh",
+	"Saffronby", "Thornquist", "Umberly", "Varnley", "Wickerham", "Yarrowdene", "Bellcote",
+	"Copperfold", "Dunmarsh", "Eldermoor", "Fallowgate", "Gorsewick", "Heathcombe", "Ivyholt",
+	"Juniperly", "Kestrelby", "Lindenwold", "Meadowick", "Nettlebury", "Oakhaven", "Primshaw",
+	"Quarrowby", "Ravelston", "Sorrelby", "Teasleworth", "Underwick", "Vetchley", "Willowmere",
+	"Brambleton", "Cloverdine", "Dappleford", "Ambleworth", "Briarholt", "Candlemoor",
+	"Dewbury", "Elmscote", "Foxbury", "Glenmarrow", "Hartlecombe", "Inglewick", "Jasperly",
+	"Kingsholt", "Lowenbury", "Mistlecote", "Northwick", "Oxlade", "Pennyrose", "Quenby",
+	"Redmarsh", "Stellington", "Thistlecote", "Upperleigh", "Vernholt", "Wrenfield", "Yewbury",
+	"Zellby",
 }
 
 // projects are coined names, so no project is a real word another pool or

@@ -34,10 +34,9 @@ func Decided(b *Builder, i int) challenge.Case {
 	b.Record(s, w[1], b.Phrase(decidedLines, "suggest", "s", s.Name, "v", c[2], "p", p), c[2], p)
 	b.Filler()
 	ev := b.Record(s, w[2], b.Phrase(decidedLines, "decide", "s", s.Name, "v", c[1]), c[1])
+	// "What did we settle on" was solved by every agent; "remind me what we
+	// decided" sits at 4/6 on each.
 	ask, variant := decidedLines["ask"][0], "decided"
-	if i%2 == 1 {
-		ask, variant = decidedLines["ask"][1], "settle"
-	}
 	return valueCase("decided-"+variant, path, i, fill(ask, "a", s.Ask), c[1], []string{c[0], c[2]}, ev)
 }
 
@@ -91,10 +90,9 @@ func TypoContact(b *Builder, i int) challenge.Case {
 	b.Record(s, w[2], fill(b.Any(paragraphs)+" {s} is still on the calendar.", "s", capFirst(s.Name)))
 	hand := b.Record(s, w[3], b.Phrase(runnerLines, "handover", "s", s.Name, "p", r[0], "q", r[1]), r[0], r[1])
 	card := b.Note(w[3], b.Phrase(runnerLines, "card", "p", r[1], "e", e1), r[1], e1)
+	// The clean question was solved by every agent; the typo splits the lines
+	// (drp23v15 8/8, Hades v26 2/8, horizon v9 2/8).
 	variant := "typo"
-	if i%3 == 2 {
-		variant = "clean"
-	}
 	return valueCase("typo-contact-"+variant, PathTopic, i, b.Phrase(runnerLines, variant, "a", s.Ask), e1, []string{e0}, hand, card)
 }
 

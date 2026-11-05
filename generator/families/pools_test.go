@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-// maxRounds is the number of rounds of the fifteen default families the
-// generator runs at its MaxCases (80): six, the last one partial.
-const maxRounds = 6
+// maxRounds is the number of rounds of the thirteen default slots the
+// generator runs at its MaxCases (80): seven, the last one partial.
+const maxRounds = 7
 
 // TestPoolsFillMaxCases holds the reserved pools to what MaxCases draws.
 // Builder.Pick panics on an exhausted pool, so an undersized pool would fail
@@ -24,7 +24,8 @@ func TestPoolsFillMaxCases(t *testing.T) {
 		"statuses":   {statuses, 3},
 		"firms":      {firms, 2},
 		"domains":    {domains, 2},
-		"nicknames":  {nicknames, 1},
+		"nicknames":  {nicknames, 5},
+		"shopNames":  {shopNames, 8},
 	}
 	for name, n := range need {
 		if got, want := len(n.pool), n.perPack*maxRounds; got < want {
@@ -37,7 +38,7 @@ func TestPoolsFillMaxCases(t *testing.T) {
 // another value of any pool. Such a pair lets one case's gold answer ground or
 // decoy another case's question.
 func TestPoolValuesStayApart(t *testing.T) {
-	pools := [][]string{cities, firstNames, surnames, nicknames, projects, firms, statuses, milestones, events, threads, rosters, schedules}
+	pools := [][]string{cities, firstNames, surnames, nicknames, projects, firms, statuses, milestones, events, threads, rosters, schedules, shopNames}
 	var all []string
 	seen := map[string]bool{}
 	for _, pool := range pools {

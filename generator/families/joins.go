@@ -99,10 +99,9 @@ func NicknameEmail(b *Builder, i int) challenge.Case {
 	team := b.Pick(projects, 1)[0]
 	d := b.Pick(domains, 2)
 	e0, e1, e2 := email(p, d[0]), strings.ToLower(nick+"."+p[strings.LastIndex(p, " ")+1:])+"@"+d[1], email(other, d[0])
+	// Only the quoted form splits the frontier panel (8/8, 4/8, 4/8); the bare
+	// one was solved by every agent.
 	variant := "quoted"
-	if i%3 == 2 {
-		variant = "bare"
-	}
 	w := b.Spread(4)
 	intro := b.Note(w[0], b.Phrase(nickLines, variant, "p", p, "n", nick, "t", team), p, nick)
 	b.Note(w[1], b.Phrase(nickLines, "old", "p", p, "e", e0), p, e0)
@@ -173,9 +172,8 @@ func OwnerFirm(b *Builder, i int) challenge.Case {
 	b.Filler()
 	ev := b.Record(s, w[1], b.Phrase(firmLines, "move", "s", s.Name, "g", f[1], "p", p), f[1], p)
 	b.Context(s, 1)
-	ask, variant := firmLines["ask"][0], "which"
-	if i%2 == 1 {
-		ask, variant = firmLines["ask"][1], "who"
-	}
+	// "Which firm" was solved by every agent; "who" makes the DrPresident line
+	// answer the coordinator (2/4) while the Hades line names the firm (4/4).
+	ask, variant := firmLines["ask"][1], "who"
 	return valueCase("owner-firm-"+variant, path, i, fill(ask, "a", s.Ask), f[1], []string{f[0], p}, ev)
 }

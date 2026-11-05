@@ -68,16 +68,11 @@ func valueCase(kind string, path Path, i int, question, gold string, distractors
 func pathFor(i, offset int) Path { return Path((i + offset) % 3) }
 
 var revertLines = Grammar{
-	// The benchmark's own unnamed revert ends "; the newest entry governs",
-	// and with it no local agent picked the previous city (0 of 18, panel
-	// 2026-11-04): the clause reads as an order to take the newest one. The
-	// mid forms keep the unnamed pointer without it; the soft ones are the
-	// forms agents got right 87 to 100 percent of the time.
-	"mid": {
-		"From now on {s} reverts to the previous entry instead.",
-		"{s} reverts to the previous entry.",
-		"For {s}, go back to the previous entry.",
-	},
+	// The soft forms on the records lane split the lines the other way:
+	// Hades v26 6/6 and horizon v9 5/6, drp23v15 3/6 (frontier panel
+	// 2026-11-05). The unnamed "reverts to the previous entry" was solved 0-2
+	// of 6 by every agent (unsolved), with or without "; the newest entry
+	// governs", so it is gone.
 	"soft": {
 		"{s} goes back to the entry before the last change.",
 		"Scrap the latest change to {s} and keep what we had right before it.",
@@ -96,18 +91,14 @@ var revertLines = Grammar{
 // the previous entry without naming it. The gold is the city before the last
 // move.
 func RevertPrevious(b *Builder, i int) challenge.Case {
-	// Always the records lane: there the unnamed revert splits the agents (mid
-	// 5 of 12, soft 10 of 12, panel 2026-11-04), while long topic notes bury
-	// the revert line (mid 0 of 12) and case files make the soft form trivial.
+	// Always the records lane: case files and long topic notes made the soft
+	// revert trivial (12 of 12 each, panel 2026-11-04).
 	path := PathRecords
 	s := b.Subject(path, b.Any(events))
 	c := b.Pick(cities, 3+i%2)
 	w := b.Spread(len(c) + 1)
 	ids := cityChain(b, s, c, w)
 	variant := "soft"
-	if i%2 == 0 {
-		variant = "mid"
-	}
 	ev := b.Record(s, w[len(w)-1], b.Phrase(revertLines, variant, "s", s.Name))
 	gold := c[len(c)-2]
 	return valueCase("revert-previous-"+variant, path, i, b.Phrase(cityLines, "ask", "a", s.Ask), gold, without(c, gold), ids[len(ids)-2], ids[len(ids)-1], ev)
@@ -184,7 +175,10 @@ func MisplacedCue(b *Builder, i int) challenge.Case {
 	path := pathFor(i, 0)
 	s := b.Subject(path, b.Any(events))
 	c := b.Pick(cities, 3)
-	if i%2 == 0 {
+	// The declined proposal splits the frontier panel (5/6, 3/6, 2/6); the
+	// rejected draft is a little easy (5/6, 4/6, 4/6), so it gets one round in
+	// three.
+	if i%3 == 2 {
 		w := b.Spread(3)
 		set := b.Record(s, w[0], b.Phrase(cueLines, "plain", "s", s.Name, "v", c[0]), c[0])
 		b.Filler()

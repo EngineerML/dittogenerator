@@ -24,7 +24,7 @@ import (
 // Name and Version identify this generator in the pack's provenance.
 const (
 	Name    = "horizon"
-	Version = "4"
+	Version = "5"
 )
 
 // GradingBenchVersions are the pack grading policies our families are
