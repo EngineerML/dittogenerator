@@ -136,6 +136,8 @@ var nicknames = []string{
 	"Noodle", "Peaches", "Gizmo", "Bunny", "Coco", "Dottie", "Flick", "Ginger",
 	"Honey", "Juno", "Kiki", "Lulu", "Mittens", "Nugget", "Pebbles", "Rascal", "Skip",
 	"Tiger", "Waffles", "Zippy", "Button", "Cricket", "Dimples", "Freckles",
+	"Bramble", "Clover", "Domino", "Fudge", "Goose", "Hobbit", "Jellybean", "Kipper",
+	"Marmalade", "Nibbles", "Pickle", "Rooster", "Sherlock", "Toffee", "Wiggles", "Zest",
 }
 
 // shopNames are coined first words of shop names (alias-list). Coined, so a

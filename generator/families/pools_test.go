@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// maxRounds is the number of rounds of the thirteen default slots the
+// maxRounds is the number of rounds of the thirteen rotation slots the
 // generator runs at its MaxCases (80): seven, the last one partial.
 const maxRounds = 7
 
@@ -19,12 +19,12 @@ func TestPoolsFillMaxCases(t *testing.T) {
 		perPack int
 	}{
 		"cities":     {cities, 22},
-		"projects":   {projects, 9},
+		"projects":   {projects, 11},
 		"milestones": {milestones, 5},
 		"statuses":   {statuses, 3},
 		"firms":      {firms, 2},
 		"domains":    {domains, 2},
-		"nicknames":  {nicknames, 5},
+		"nicknames":  {nicknames, 9},
 		"shopNames":  {shopNames, 8},
 	}
 	for name, n := range need {

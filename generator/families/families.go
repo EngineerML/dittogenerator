@@ -6,23 +6,23 @@ import "github.com/ditto-assistant/dittobench-datagen/challenge"
 // pack; it picks the variant and the path.
 type Family func(b *Builder, i int) challenge.Case
 
-// Default is the family rotation: nine of its thirteen slots are the
-// half-credit list families (lists.go), four links to the second item so no
-// single reading habit beats them all; the other four are the pass/fail
-// families that split the frontier panel most (Hades v26, horizon v9 and
-// drp23v15, 2026-11-05).
+// Default is the family rotation: ten of its thirteen slots are half-credit
+// list families (lists.go), the other three the pass/fail families that split
+// the frontier panel most (Hades v26, horizon v9 and drp23v15, 2026-11-05),
+// kept so one reading fix cannot undercut the whole pack.
 //
 // With the live champion (dan0l v42) solving almost every case, a list case
-// needs only one more owner at 0.5 and keeps a low mean, so it earns about
-// twice the credit of a pass/fail case (tools/panel_estimate.py).
+// needs only one more owner at 0.5 and keeps a low mean. Estimated credit per
+// case (tools/panel_estimate.py, five-member panel): role-list 0.56,
+// alias-list 0.54, typo-list 0.51, typo-contact 0.45, membership-fold 0.42,
+// nickname-email 0.34; about 0.31 for the pack.
 //
-// Out of the rotation and kept for experiments: AsOf, Handover, LiveStatus and
-// RevertOriginal (solved by every frontier agent), and RevertPrevious,
-// StruckEntry, EventOrder, ForwardedOld, InitialsContact, OwnerFirm and
-// Decided (0.13-0.37 estimated credit per case, against 0.44-0.51 for the
-// families kept).
+// Out of the rotation and kept for experiments: InitialsList (the Hades line
+// follows initials, 0.38), MisplacedCue (0.28-0.38), AsOf, Handover,
+// LiveStatus and RevertOriginal (solved by every frontier agent), and
+// RevertPrevious, StruckEntry, EventOrder, ForwardedOld, InitialsContact,
+// OwnerFirm and Decided (0.13-0.37).
 var Default = []Family{
-	AliasList, InitialsList, RoleList, TypoList, TypoContact,
-	AliasList, InitialsList, MembershipFold, RoleList, TypoList,
-	NicknameEmail, AliasList, MisplacedCue,
+	RoleList, AliasList, TypoList, RoleList, AliasList, TypoContact, RoleList,
+	AliasList, MembershipFold, RoleList, AliasList, TypoList, NicknameEmail,
 }
