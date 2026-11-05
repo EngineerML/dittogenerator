@@ -11,13 +11,14 @@ are at hand.
 
 `main.go` and the builder's shape come from the public starter kit
 (`repos/ditto-subnet/miners/dittobench-generator-starter-kit`, MIT, see LICENSE.starter-kit). The
-rest is ours (version 3):
+rest is ours (version 6):
 
 | File | What |
 |---|---|
 | `families/builder.go` | eight waves, opaque pair and session IDs, reserved values and people, case-file IDs, timestamps |
 | `families/text.go` | a small grammar (`#key#` alternatives, values filled in after), subjects per path, renderers (chat, forwarded email, forwarded text, sheet row, long multi-paragraph note), letter-swap noise that never touches a value |
-| `families/chains.go`, `joins.go`, `splitters.go` | the fifteen families |
+| `families/lists.go` | the four half-credit list families |
+| `families/chains.go`, `joins.go`, `splitters.go` | the pass/fail families (four in the rotation, the rest kept for experiments) |
 | `families/pools.go`, `prose.go` | values and the text around them |
 
 The packs declare the newest grading policy the request accepts that this generator knows (13 to
@@ -36,27 +37,27 @@ name in every summary.
 
 ### Families
 
-Built from the agent research in /home/bittensor/ditto (v15_atlas, notes 2026-11-01 to 2026-11-03):
-the shapes there that gpt-oss-20b agents get right 20 to 80 percent of the time, and the places the
-DrPresident and dan0l lines route the same question differently.
+Measured on a frontier panel (Hades v26, horizon v9 built from its upload, drp23v15; official
+grader, policy 15) and weighed with `tools/panel_estimate.py`, which models the live champion
+(dan0l v42, 0.89 on the top generators' shared cases) that the local panel lacks. With a champion
+that solves almost everything, a case needs only one more owner at 0.5, so two-item lists, where
+the easy half is worth exactly 0.5, earn about twice the credit of pass/fail cases.
 
-| Group | Family | What happens | Gold |
+Nine of the thirteen rotation slots are lists (about 70% of a pack). Each asks for two shops a
+person likes: one told under the full name, one only through a link, beside a look-alike with
+shops of their own. Naming only the first earns 0.5; hedging about the second ("and no record of a
+second one") or naming the look-alike's earns 0.
+
+| Family | Slots | The second shop is told under | Look-alike |
 |---|---|---|---|
-| chain | `revert-previous` | three or four moves, then "reverts to the previous entry" (mid) or a plainer undo | the city before the last move |
-| chain | `revert-original` | two or three moves, then "back to the city we had at the very start" | the first city |
-| chain | `struck-entry` | the location worded differently in each entry, then the latest entry "logged in error" | the city before it |
-| chain | `misplaced-cue` | a draft "update" that sign-off turns down, or a plain move followed by a declined proposal | the city that stands |
-| chain | `membership-fold` | four people, then a removal, an addition, a swap (and a re-add), asked "after the change" | the final list |
-| chain | `event-order` | five milestones, two dated only relative to another, filed in random waves | the one right before a named milestone |
-| join | `as-of` | three dated locations | the one that held on a day inside the middle interval |
-| join | `forwarded` | a dated move, then an older message forwarded last | the moved-to city |
-| join | `nickname-email` | an email changed in a note that uses only the person's nickname | the new email |
-| join | `initials-contact` | a thread handed to "C. Nilsen", with a directory holding a namesake | the new holder's email |
-| join | `owner-firm` | a contract moved to a firm whose coordinator is named in the same note, asked "who holds it" | the firm |
-| splitter | `decided` | two cities weighed, a third suggested, one agreed; asked "remind me what we decided" | the agreed city |
-| splitter | `live-status` | three multi-word states; asked for "the up-to-date status" | the latest state |
-| splitter | `typo-contact` | a handover in long notes, emails on short cards; asked "whats the emial" (or cleanly) | the new runner's email |
-| splitter | `handover` | a thread handed over with "took over", "run point", "has the ball" or "owns", and a third person cc'd | the new holder |
+| `alias-list` | 3 | a nickname, bound once ("everyone calls Edith Page Pip") | a namesake (same first name) with a nickname |
+| `initials-list` | 2 | initial and surname ("E. Page") | same surname, another initial |
+| `role-list` | 2 | a role ("the Brevant lead"), named in another record | a namesake leading another team |
+| `typo-list` | 2 | the name with two surname letters swapped ("Edith Pgae") | a real surname one letter away ("Edith Pace") |
+| `typo-contact` | 1 | pass/fail: handover in long notes, asked "whats the emial" | |
+| `membership-fold` | 1 | pass/fail: removal, addition, swap and re-add, asked "after the change" | |
+| `nickname-email` | 1 | pass/fail: an email changed in a note that quotes only the nickname | |
+| `misplaced-cue` | 1 | pass/fail: a declined proposal (a rejected draft every third round) | |
 
 Every wrong value a case's memory holds is listed as a distractor, so a reply that names it scores
 0 and a memory dump fails.

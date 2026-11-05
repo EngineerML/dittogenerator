@@ -216,7 +216,10 @@ func MembershipFold(b *Builder, i int) challenge.Case {
 	path := pathFor(i, 1)
 	s := b.Subject(path, b.Any(rosters))
 	m := b.People(6)
-	readd := i%2 == 0
+	// Always the re-add: without it every frontier agent folded the list
+	// (Hades v26 and horizon v9 5/6, drp23v15 6/6); with it the Hades line
+	// drops to 2/6 while drp23v15 keeps 6/6 (panel 2026-11-05).
+	readd := true
 	steps := 4
 	if readd {
 		steps = 5
