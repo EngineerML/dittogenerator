@@ -24,7 +24,7 @@ func TestPoolsFillMaxCases(t *testing.T) {
 		"statuses":   {statuses, 3},
 		"firms":      {firms, 2},
 		"domains":    {domains, 2},
-		"nicknames":  {nicknames, 8},
+		"nicknames":  {nicknames, 10},
 		"shopNames":  {shopNames, 8},
 	}
 	for name, n := range need {
