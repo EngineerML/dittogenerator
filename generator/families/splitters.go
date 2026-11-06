@@ -5,12 +5,9 @@ import (
 )
 
 // Splitter families: ordinary memory questions worded the way people ask
-// them, where one line of the top agents routes the wording somewhere else
-// before it reads memory ("what we decided" reads as an instruction to act,
-// "the up-to-date status" as a live lookup, a misspelt "emial" misses a
-// literal contact pattern). Each answer is plainly in memory; the case only
-// tests whether the agent reads it. They are a quarter of a pack at most,
-// since one regex change in a new agent version can retire them.
+// them ("remind me what we decided", "the up-to-date status", a misspelt
+// "emial"). Each answer is plainly in memory; the case tests whether the
+// reader treats the wording as a memory question at all.
 
 var decidedLines = Grammar{
 	"weigh":   {"For {s} we're weighing {v} and {w}.", "Shortlist for {s}: {v} or {w}."},
@@ -34,8 +31,7 @@ func Decided(b *Builder, i int) challenge.Case {
 	b.Record(s, w[1], b.Phrase(decidedLines, "suggest", "s", s.Name, "v", c[2], "p", p), c[2], p)
 	b.Filler()
 	ev := b.Record(s, w[2], b.Phrase(decidedLines, "decide", "s", s.Name, "v", c[1]), c[1])
-	// "What did we settle on" was solved by every agent; "remind me what we
-	// decided" sits at 4/6 on each.
+	// "Remind me what we decided" only: "what did we settle on" was too easy.
 	ask, variant := decidedLines["ask"][0], "decided"
 	return valueCase("decided-"+variant, path, i, fill(ask, "a", s.Ask), c[1], []string{c[0], c[2]}, ev)
 }
@@ -90,8 +86,7 @@ func TypoContact(b *Builder, i int) challenge.Case {
 	b.Record(s, w[2], fill(b.Any(paragraphs)+" {s} is still on the calendar.", "s", capFirst(s.Name)))
 	hand := b.Record(s, w[3], b.Phrase(runnerLines, "handover", "s", s.Name, "p", r[0], "q", r[1]), r[0], r[1])
 	card := b.Note(w[3], b.Phrase(runnerLines, "card", "p", r[1], "e", e1), r[1], e1)
-	// The clean question was solved by every agent; the typo splits the lines
-	// (drp23v15 8/8, Hades v26 2/8, horizon v9 2/8).
+	// Always the misspelled question: the clean one was too easy.
 	variant := "typo"
 	return valueCase("typo-contact-"+variant, PathTopic, i, b.Phrase(runnerLines, variant, "a", s.Ask), e1, []string{e0}, hand, card)
 }

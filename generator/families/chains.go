@@ -10,11 +10,7 @@ import (
 )
 
 // Chain families: one value changes several times and a later note decides
-// which one stands, often by pointing back without naming it. The agent
-// research measured these as the band where gpt-oss-20b agents are right 20
-// to 80 percent of the time: "reverts to the previous entry instead" was right
-// 9 of 86 times, a membership fold asked "after the change" 10 of 18, a struck
-// entry whose field is worded three ways split about 30 percent of groups.
+// which one stands, often by pointing back without naming it.
 
 var cityLines = Grammar{
 	"set": {
@@ -68,11 +64,8 @@ func valueCase(kind string, path Path, i int, question, gold string, distractors
 func pathFor(i, offset int) Path { return Path((i + offset) % 3) }
 
 var revertLines = Grammar{
-	// The soft forms on the records lane split the lines the other way:
-	// Hades v26 6/6 and horizon v9 5/6, drp23v15 3/6 (frontier panel
-	// 2026-11-05). The unnamed "reverts to the previous entry" was solved 0-2
-	// of 6 by every agent (unsolved), with or without "; the newest entry
-	// governs", so it is gone.
+	// Plain undo wordings; a bare "reverts to the previous entry" was almost
+	// never followed, so it is gone.
 	"soft": {
 		"{s} goes back to the entry before the last change.",
 		"Scrap the latest change to {s} and keep what we had right before it.",
@@ -91,8 +84,8 @@ var revertLines = Grammar{
 // the previous entry without naming it. The gold is the city before the last
 // move.
 func RevertPrevious(b *Builder, i int) challenge.Case {
-	// Always the records lane: case files and long topic notes made the soft
-	// revert trivial (12 of 12 each, panel 2026-11-04).
+	// Always the records lane: in case files and long notes the soft revert
+	// was too easy.
 	path := PathRecords
 	s := b.Subject(path, b.Any(events))
 	c := b.Pick(cities, 3+i%2)
@@ -175,9 +168,8 @@ func MisplacedCue(b *Builder, i int) challenge.Case {
 	path := pathFor(i, 0)
 	s := b.Subject(path, b.Any(events))
 	c := b.Pick(cities, 3)
-	// The declined proposal splits the frontier panel (5/6, 3/6, 2/6); the
-	// rejected draft is a little easy (5/6, 4/6, 4/6), so it gets one round in
-	// three.
+	// The declined proposal is the harder variant; the rejected draft gets one
+	// round in three.
 	if i%3 == 2 {
 		w := b.Spread(3)
 		set := b.Record(s, w[0], b.Phrase(cueLines, "plain", "s", s.Name, "v", c[0]), c[0])
@@ -216,9 +208,7 @@ func MembershipFold(b *Builder, i int) challenge.Case {
 	path := pathFor(i, 1)
 	s := b.Subject(path, b.Any(rosters))
 	m := b.People(6)
-	// Always the re-add: without it every frontier agent folded the list
-	// (Hades v26 and horizon v9 5/6, drp23v15 6/6); with it the Hades line
-	// drops to 2/6 while drp23v15 keeps 6/6 (panel 2026-11-05).
+	// Always the re-add: without it the fold was too easy.
 	readd := true
 	steps := 4
 	if readd {

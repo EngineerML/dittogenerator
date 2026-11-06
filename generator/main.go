@@ -5,10 +5,10 @@
 //
 // The scorer builds this module offline and runs it in a no-network sandbox:
 // it writes one request JSON object to stdin and reads one pack JSON object
-// from stdout. Rehearse exactly that path locally:
+// from stdout. Rehearse exactly that path with the competition's tool, from
+// the dittobench-datagen module:
 //
-//	cd ../repos/ditto-subnet/research/dittobench-datagen
-//	go run ./cmd/challenge rehearse -dir "$OLDPWD" -hotkey <ss58> -seeds 3 -cases 80
+//	go run ./cmd/challenge rehearse -dir <this directory> -hotkey <ss58> -seeds 3 -cases 80
 package main
 
 import (

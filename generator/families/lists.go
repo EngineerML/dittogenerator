@@ -19,13 +19,6 @@ import (
 // second item ("and no record of a second one"), or takes the look-alike's,
 // earns 0; one that follows the link earns 1.
 //
-// On the frontier panel (2026-11-05) the nickname form scored 1.0 on 13% of
-// answers, 0.5 on 44% and 0 on 43%, the zeros mostly hedges; panel means
-// 0.31-0.38, as on the top live columns. With the live champion solving
-// almost everything, a case needs only one more owner at 0.5, so the low
-// means turn into high credit (tools/panel_estimate.py: about 0.32 for a
-// pack of these, against about 0.20 for pass/fail cases).
-//
 // Every link is stated or unambiguous, so each case is solvable at full
 // credit.
 var listLines = Grammar{
@@ -40,10 +33,7 @@ var listLines = Grammar{
 		"Apparently {v} is where {n} goes every single week.",
 	},
 	// "plain" never names the shop kind, so the question's words do not pull
-	// the second record up: an agent has to reach it through the link. Used
-	// where the Hades line passed above half the time with full credit
-	// (alias-list 62%, 15% full; typo-list 58%, 17% full), to bring it toward
-	// half passes and fewer full ones.
+	// the second record up: an agent has to reach it through the link.
 	"plain": {
 		"{n} swears by {v}, nothing else comes close.",
 		"{n} dragged me to {v} today and would not stop praising it.",
@@ -60,8 +50,8 @@ var listLines = Grammar{
 		"Heads up, the {t} lead is {p} from now on.",
 	},
 	"ask": {
-		// Questions only: the imperative "Name the two..." sent every frontier
-		// agent to its action lane.
+		// Questions only: an imperative ("Name the two...") reads as a request to
+		// act, not a question about memory.
 		"Which two {c} does {p} love?",
 		"Which two {c} is {p} really fond of?",
 		"What are the two {c} {p} keeps going back to?",
