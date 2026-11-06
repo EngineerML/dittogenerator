@@ -39,6 +39,16 @@ var listLines = Grammar{
 		"{n} dragged me to {v} today and would not stop praising it.",
 		"Apparently {v} is where {n} goes every single week.",
 	},
+	// "plain" never names the shop kind, so the question's words do not pull
+	// the second record up: an agent has to reach it through the link. Used
+	// where the Hades line passed above half the time with full credit
+	// (alias-list 62%, 15% full; typo-list 58%, 17% full), to bring it toward
+	// half passes and fewer full ones.
+	"plain": {
+		"{n} swears by {v}, nothing else comes close.",
+		"{n} dragged me to {v} today and would not stop praising it.",
+		"Apparently {v} is where {n} goes every single week.",
+	},
 	"nickname": {
 		"{p} goes by {n} with pretty much everyone.",
 		"Everyone calls {p} {n}, has done for years.",
@@ -114,14 +124,22 @@ func (l *listCase) say(k int, key string, kv ...string) string {
 	return l.b.Note(l.w[k], line, l.protect...)
 }
 
+// sayInNote seeds a line inside a longer note about an unrelated topic, so it
+// is stated plainly but does not stand on its own.
+func (l *listCase) sayInNote(k int, topic, key string, kv ...string) string {
+	line := capFirst(l.b.Phrase(listLines, key, kv...))
+	return l.b.LongNote(l.w[k], topic, line, l.protect...)
+}
+
 // items seeds both people's two shops: one under the full name, one under the
-// reference. The first person's two records are the evidence.
-func (l *listCase) items() {
+// reference worded by ref ("ref" or "plain"). The first person's two records
+// are the evidence.
+func (l *listCase) items(ref string) {
 	l.ids = append(l.ids,
 		l.say(1, "full", "p", l.people[0], "v", l.shops[0]),
-		l.say(2, "ref", "n", l.refs[0], "v", l.shops[1]))
+		l.say(2, ref, "n", l.refs[0], "v", l.shops[1]))
 	l.say(4, "full", "p", l.people[1], "v", l.shops[2])
-	l.say(5, "ref", "n", l.refs[1], "v", l.shops[3])
+	l.say(5, ref, "n", l.refs[1], "v", l.shops[3])
 }
 
 func (l *listCase) finish(kind string) challenge.Case {
@@ -158,14 +176,15 @@ func (b *Builder) namesakes() [2]string {
 
 // AliasList: the second shop is told under a nickname, and a namesake (same
 // first name) has a nickname and shops of their own. Both nicknames are bound
-// once in plain words.
+// once in plain words, inside a longer note about something else, and the
+// second shop's record never names the shop kind.
 func AliasList(b *Builder, i int) challenge.Case {
 	people := b.namesakes()
 	nick := b.Pick(nicknames, 2)
 	l := b.newList(people, [2]string{nick[0], nick[1]})
-	l.ids = append(l.ids, l.say(0, "nickname", "p", people[0], "n", nick[0]))
-	l.say(3, "nickname", "p", people[1], "n", nick[1])
-	l.items()
+	l.ids = append(l.ids, l.sayInNote(0, b.Any(events), "nickname", "p", people[0], "n", nick[0]))
+	l.sayInNote(3, b.Any(events), "nickname", "p", people[1], "n", nick[1])
+	l.items("plain")
 	return l.finish("alias-list")
 }
 
@@ -180,7 +199,7 @@ func InitialsList(b *Builder, i int) challenge.Case {
 	}
 	b.used[people[0]], b.used[people[1]] = true, true
 	l := b.newList(people, [2]string{people[0][:1] + ". " + surname, people[1][:1] + ". " + surname})
-	l.items()
+	l.items("ref")
 	return l.finish("initials-list")
 }
 
@@ -192,13 +211,14 @@ func RoleList(b *Builder, i int) challenge.Case {
 	l := b.newList(people, [2]string{"the " + teams[0] + " lead", "the " + teams[1] + " lead"})
 	l.ids = append(l.ids, l.say(0, "role", "p", people[0], "t", teams[0]))
 	l.say(3, "role", "p", people[1], "t", teams[1])
-	l.items()
+	l.items("ref")
 	return l.finish("role-list")
 }
 
 // TypoList: the second shop is told under the person's name with two letters
-// of the surname swapped ("Edith Pgae"), and a real look-alike one letter
-// away ("Edith Pace") has shops of their own.
+// of the surname swapped ("Edith Pgae"), in a record that never names the
+// shop kind, and a real look-alike one letter away ("Edith Pace") has shops
+// of their own.
 func TypoList(b *Builder, i int) challenge.Case {
 	first := b.Any(firstNames)
 	var pair [2]string
@@ -215,6 +235,6 @@ func TypoList(b *Builder, i int) challenge.Case {
 	s := []byte(pair[0])
 	s[1], s[2] = s[2], s[1]
 	l := b.newList(people, [2]string{first + " " + string(s), people[1]})
-	l.items()
+	l.items("plain")
 	return l.finish("typo-list")
 }

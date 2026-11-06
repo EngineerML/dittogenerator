@@ -43,7 +43,7 @@ grader, policy 15) and weighed with `tools/panel_estimate.py`, which models the 
 that solves almost everything, a case needs only one more owner at 0.5, so two-item lists, where
 the easy half is worth exactly 0.5, earn about twice the credit of pass/fail cases.
 
-The rotation is lists only (eleven slots; estimated live score about 0.33). The pass/fail families
+The rotation is lists only (eleven slots; estimated live score about 0.35). The pass/fail families
 were about 60% of Hades v26's full-credit answers, and every full answer raises a case's mean. Each asks for two shops a
 person likes: one told under the full name, one only through a link, beside a look-alike with
 shops of their own. Naming only the first earns 0.5; hedging about the second ("and no record of a
@@ -51,9 +51,9 @@ second one") or naming the look-alike's earns 0.
 
 | Family | Slots | The second shop is told under | Look-alike |
 |---|---|---|---|
-| `alias-list` | 4 | a nickname, bound once ("everyone calls Edith Page Pip") | a namesake (same first name) with a nickname |
+| `alias-list` | 5 | a nickname, bound once inside a note about something else ("everyone calls Edith Page Pip"); the second record never names the shop kind | a namesake (same first name) with a nickname |
 | `role-list` | 5 | a role ("the Brevant lead"), named in another record | a namesake leading another team |
-| `typo-list` | 2 | the name with two surname letters swapped ("Edith Pgae") | a real surname one letter away ("Edith Pace") |
+| `typo-list` | 1 | the name with two surname letters swapped ("Edith Pgae"), in a record that never names the shop kind | a real surname one letter away ("Edith Pace") |
 
 Out of the rotation and kept for experiments: the pass/fail families that split the panel best
 (`typo-contact`, `membership-fold`, `nickname-email`, `misplaced-cue`), `initials-list` (the Hades line

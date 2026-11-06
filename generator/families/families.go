@@ -14,9 +14,11 @@ type Family func(b *Builder, i int) challenge.Case
 // only one more owner at 0.5, and every full-credit answer raises its mean.
 // The pass/fail families were about 60% of Hades v26's full answers on a v6
 // pack; without them the estimated live score rises from about 0.31 to 0.33
-// (tools/panel_estimate.py, five-member panel). Estimated credit per case:
-// role-list 0.56 (no full credit for the Hades line), alias-list 0.54,
-// typo-list 0.51.
+// (tools/panel_estimate.py, five-member panel). Since alias-list and
+// typo-list stopped naming the shop kind in the second record (2026-11-05),
+// the Hades line passes them about half the time with almost no full credit.
+// Estimated credit per case: alias-list 0.61, role-list 0.56, typo-list 0.50
+// (one slot, for variety); about 0.35 for the pack.
 //
 // Kept for experiments, out of the rotation: the pass/fail families that
 // split the panel best (TypoContact, MembershipFold, NicknameEmail,
@@ -25,6 +27,6 @@ type Family func(b *Builder, i int) challenge.Case
 // LiveStatus, RevertOriginal, RevertPrevious, StruckEntry, EventOrder,
 // ForwardedOld, InitialsContact, OwnerFirm, Decided).
 var Default = []Family{
-	RoleList, AliasList, RoleList, TypoList, AliasList, RoleList,
-	AliasList, RoleList, TypoList, AliasList, RoleList,
+	RoleList, AliasList, RoleList, AliasList, TypoList, RoleList,
+	AliasList, RoleList, AliasList, RoleList, AliasList,
 }
