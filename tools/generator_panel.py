@@ -156,7 +156,8 @@ def family(case_id: str) -> str:
 def rehearse(args, out: Path) -> list[Path]:
     packs = out / "packs"
     packs.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["go", "run", "./cmd/challenge", "rehearse", "-dir", str(args.dir), "-hotkey", TEST_HOTKEY,
+    source = ["-archive", str(args.archive.resolve())] if args.archive else ["-dir", str(args.dir.resolve())]
+    subprocess.run(["go", "run", "./cmd/challenge", "rehearse", *source, "-sandbox", args.sandbox, "-hotkey", TEST_HOTKEY,
                     "-seeds", str(args.seeds), "-seed", str(args.seed), "-cases", str(args.cases),
                     "-round-bench", str(args.round_bench), "-out-dir", str(packs)], cwd=DATAGEN_DIR, check=True)
     paths = sorted(packs.glob("*.json"))
@@ -304,6 +305,10 @@ def main() -> int:
                     help="id=image-tag (ditto-harness:<tag>); repeat for each panel agent")
     ap.add_argument("--mock", action="store_true", help="free routing bench: fake model and embeddings, traces only")
     ap.add_argument("--dir", type=Path, default=HERE / "generator")
+    ap.add_argument("--archive", type=Path, help="generator source archive (e.g. a released miner generator) instead of --dir")
+    ap.add_argument("--sandbox", choices=("local", "docker"), default="local",
+                    help="docker builds and runs the generator in the scorer's sandbox; use it for any code we did not write")
+    ap.add_argument("--packs", type=Path, help="run these pack files (*.json) instead of generating packs")
     ap.add_argument("--seeds", type=int, default=1)
     ap.add_argument("--seed", type=int, default=1, help="first rehearsal seed")
     ap.add_argument("--cases", type=int, default=80)
@@ -340,7 +345,16 @@ def main() -> int:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = HERE / "practice" / "generator" / (stamp + ("-mock" if args.mock else ""))
     out.mkdir(parents=True, exist_ok=True)
-    packs = rehearse(args, out)
+    if args.packs:
+        # Packs generated elsewhere (tools/sandboxcheck -out-dir, which runs the generator in the scorer's sandbox).
+        (out / "packs").mkdir(exist_ok=True)
+        packs = []
+        for src in sorted(args.packs.glob("*.json")):
+            dst = out / "packs" / src.name
+            dst.write_bytes(src.read_bytes())
+            packs.append(dst)
+    else:
+        packs = rehearse(args, out)
     child_env = dict(os.environ, OPENROUTER_API_KEY=key)
     shim = None
     if args.mock:

@@ -31,6 +31,7 @@ func main() {
 	first := flag.Int64("seed", 1001, "first scored seed (the probe is the next one after the scored seeds)")
 	seeds := flag.Int("seeds", 2, "scored seeds, as in qualification")
 	hotkey := flag.String("hotkey", "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", "miner hotkey the packs echo")
+	outDir := flag.String("out-dir", "", "also write each scored seed's pack here (seed-N.json), for tools/generator_panel.py --packs")
 	flag.Parse()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
@@ -64,6 +65,21 @@ func main() {
 		fail("sandbox (not the generator's fault): %v", err)
 	}
 	fmt.Printf("build: ok=%v %dms %s\n", ev.Build.OK, ev.Build.DurationMS, ev.Build.Error)
+	if *outDir != "" {
+		if err := os.MkdirAll(*outDir, 0o755); err != nil {
+			fail("out-dir: %v", err)
+		}
+		for i, s := range ev.Seeds {
+			if len(s.Pack) == 0 {
+				continue
+			}
+			path := fmt.Sprintf("%s/seed-%d.json", *outDir, i+1)
+			if err := os.WriteFile(path, s.Pack, 0o644); err != nil {
+				fail("write %s: %v", path, err)
+			}
+			fmt.Printf("pack written: %s (%d bytes)\n", path, len(s.Pack))
+		}
+	}
 	for i, s := range ev.Seeds {
 		report(fmt.Sprintf("seed %d", i+1), s)
 	}
