@@ -17,7 +17,11 @@ type Family func(b *Builder, i int) challenge.Case
 // past a limit many current agents share; AliasList (nickname bound inside a
 // long note) and RoleNoteList keep the link families. See notes/
 // 2026-11-16_edge_tracks.md.
+//
+// v8.1: the two-item edge lists came out trivial on a released-agent panel (25 of
+// 35 cases solved by all four at 0.5), so the rotation is MultiList only:
+// three-item lists over two different edge links (multi.go).
 var Default = []Family{
-	NameShapeList, CorrectionList, SessionRelay, NumberList, AliasList, NameShapeList,
-	RoleNoteList, CorrectionList, SessionRelay, NameShapeList, NumberList,
+	MultiList, MultiList, MultiList, MultiList, MultiList, MultiList,
+	MultiList, MultiList, MultiList, MultiList, MultiList,
 }

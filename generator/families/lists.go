@@ -63,6 +63,7 @@ var listLines = Grammar{
 var listKinds = [][2]string{
 	{"bakeries", "Bakehouse"}, {"bookshops", "Books"}, {"coffee roasters", "Roasters"},
 	{"delis", "Deli"}, {"florists", "Flowers"}, {"bike shops", "Cycles"},
+	{"wine bars", "Wine Bar"}, {"barbers", "Barbers"}, {"gyms", "Fitness"}, {"cinemas", "Picturehouse"},
 }
 
 // lookalikes are pairs of real surnames one letter apart, for the misspelled-

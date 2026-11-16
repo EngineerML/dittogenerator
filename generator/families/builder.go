@@ -166,11 +166,31 @@ func (b *Builder) Any(pool []string) string {
 // plain capitalised words the agents' name patterns read.
 func (b *Builder) Person() string {
 	for {
-		name := b.Any(firstNames) + " " + b.Any(surnames)
-		if !b.used[name] {
+		first, sur := b.Any(firstNames), b.Any(surnames)
+		name := first + " " + sur
+		if !b.used[name] && !b.used["own:"+first] && !b.used["ownsur:"+sur] {
 			b.used[name] = true
+			b.used["seen:"+first], b.used["seensur:"+sur] = true, true
 			return name
 		}
+	}
+}
+
+// OwnPerson returns a reserved full name whose first name no other person in
+// the pack has or will have, so records may speak of them by first name alone.
+func (b *Builder) OwnPerson() string {
+	for tries := 0; ; tries++ {
+		first := b.Any(firstNames)
+		// After many draws the pool of unseen first names is spent: fall back to
+		// one not reserved by another own person (rare, in packs near 80 cases).
+		sur := b.Any(surnames)
+		if b.used["own:"+first] || b.used["ownsur:"+sur] || ((b.used["seen:"+first] || b.used["seensur:"+sur]) && tries < 400) {
+			continue
+		}
+		name := first + " " + sur
+		b.used[name], b.used["own:"+first], b.used["seen:"+first] = true, true, true
+		b.used["ownsur:"+sur], b.used["seensur:"+sur] = true, true
+		return name
 	}
 }
 
