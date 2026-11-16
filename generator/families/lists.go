@@ -133,6 +133,9 @@ func (l *listCase) items(ref string) {
 }
 
 func (l *listCase) finish(kind string) challenge.Case {
+	for _, p := range l.people {
+		l.b.Chatter(p, 3)
+	}
 	gold := l.shops[:2]
 	return challenge.Case{
 		MemoryCase: protocol.MemoryCase{

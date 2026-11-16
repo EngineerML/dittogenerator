@@ -24,13 +24,13 @@ import (
 // Name and Version identify this generator in the pack's provenance.
 const (
 	Name    = "horizon"
-	Version = "7"
+	Version = "8"
 )
 
 // GradingBenchVersions are the pack grading policies our families are
 // written for. The pack declares the newest one the request accepts: rounds
-// at bench 15 accept 14 and 15 only.
-var GradingBenchVersions = []int{challenge.GradingBenchVersion, challenge.GradingBenchVersionV14, challenge.GradingBenchVersionV15}
+// at bench 18 accept 17 and 18. Policies 16 to 18 grade exactly like 15.
+var GradingBenchVersions = []int{challenge.GradingBenchVersion, challenge.GradingBenchVersionV14, challenge.GradingBenchVersionV15, challenge.GradingBenchVersionV16, challenge.GradingBenchVersionV17, challenge.GradingBenchVersionV18}
 
 // MaxCases is the most cases the pools can fill without reusing a value. It
 // matches challenge.MaxCases, the most cases_per_seed Platform can set: a

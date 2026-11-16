@@ -12,7 +12,12 @@ type Family func(b *Builder, i int) challenge.Case
 //
 // Kept for experiments, out of the rotation: InitialsList, and the
 // single-answer families in chains.go, joins.go and splitters.go.
+//
+// v8 (2026-11-16): edge families (edges.go) take most slots, each sitting just
+// past a limit many current agents share; AliasList (nickname bound inside a
+// long note) and RoleNoteList keep the link families. See notes/
+// 2026-11-16_edge_tracks.md.
 var Default = []Family{
-	RoleList, AliasList, RoleList, AliasList, TypoList, RoleList,
-	AliasList, RoleList, AliasList, RoleList, AliasList,
+	NameShapeList, CorrectionList, SessionRelay, NumberList, AliasList, NameShapeList,
+	RoleNoteList, CorrectionList, SessionRelay, NameShapeList, NumberList,
 }

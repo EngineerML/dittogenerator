@@ -103,6 +103,26 @@ func (b *Builder) Say(wave int, prompt, response string) string {
 	return id
 }
 
+// Session returns a fresh opaque session ID for a wave, for records that are
+// turns of one conversation (SayIn).
+func (b *Builder) Session(wave int) string {
+	return fmt.Sprintf("s%d%s", wave, b.token(4))
+}
+
+// SayIn seeds one pair in a given session of a wave. Pairs are stamped in the
+// order they are seeded within a wave, 20 to 80 minutes apart, so a pair
+// seeded between two turns of one session sits between them in time too.
+func (b *Builder) SayIn(wave int, session, prompt, response string) string {
+	id := "m" + b.token(9)
+	b.waves[wave].Pairs = append(b.waves[wave].Pairs, protocol.MemoryPair{
+		PairID:    id,
+		SessionID: session,
+		Prompt:    prompt,
+		Response:  response,
+	})
+	return id
+}
+
 // Add appends a case. Cases run after the last wave so every fact is seeded.
 func (b *Builder) Add(c challenge.Case) {
 	b.AddAt(c, Waves-1)
