@@ -14,26 +14,33 @@ the families are ours.
 | `main.go` | entry point; declares the newest grading policy the request accepts that the generator knows, never below the round's own baseline |
 | `families/builder.go` | eight waves, opaque pair and session IDs, reserved values and people, timestamps |
 | `families/text.go` | a small grammar, renderers (chat, forwarded email, forwarded text, sheet row, long note) and letter-swap noise that never touches a value |
-| `families/lists.go` | the list families in the rotation |
+| `families/multi.go` | the multi-link list family in the rotation (v8) |
+| `families/edges.go` | link wording, name shapes, four-digit numbers, person chatter |
+| `families/lists.go` | earlier list families and the shop kinds |
 | `families/chains.go`, `joins.go`, `splitters.go` | single-answer families, kept for experiments |
 | `families/pools.go`, `prose.go` | values and the text around them |
 
 ## Families
 
-Every case asks for the two shops one person likes. One is told under the person's full name, the
-other only through a link the reader has to follow, and a look-alike person nearby has shops of
-their own. A list answer is graded by the share of items named, and naming a look-alike's shop or
-declining zeroes it, so naming the full-name shop earns half credit, following the link earns full
-credit, and confusing the two people earns nothing. Every link is stated plainly or unambiguous.
+Every case asks for the two places one person keeps going to. One is told under the person's full
+name (with she or he), the other only through a link the reader has to follow, and every link brings
+a look-alike place that is not the person's. A list answer is graded by the share of items named,
+and naming a look-alike place or declining zeroes it, so the full-name place earns half credit,
+following the link earns full credit, and taking a look-alike earns nothing.
 
-| Family | Share | The second shop is told under | Look-alike |
-|---|---|---|---|
-| `role-list` | 5 of 11 | a role ("the Brevant lead"), named in another record | a namesake leading another team |
-| `alias-list` | 5 of 11 | a nickname, bound once inside a note about something else | a namesake (same first name) with a nickname |
-| `typo-list` | 1 of 11 | the name with two surname letters swapped ("Edith Pgae") | a real surname one letter away ("Edith Pace") |
+| Link | The second place is told under | Look-alike |
+|---|---|---|
+| `session` | the next turn of a conversation that named the person, with another conversation in between | another person's conversation under a different lead |
+| `number` | receipts under a four-digit membership number another record gives as the person's | a receipt under the same digits in another order |
+| `title` | Ms. or Mr. and the surname, whichever fits the full-name record's pronoun | the surname under the other title |
+| `shape` | a name outside the two-capitalised-words shape (double first names, particles, Mac/O' forms) | a person the two-word reading confuses with them |
+| `found` | the place the person moved to after giving one up | the place given up |
 
-The second record of `alias-list` and `typo-list` never names the shop kind the question asks about,
-so the question's words alone do not lead to it.
+Most cases add one more look-alike: a relative under the other title (`title`) or a place the person
+used and later gave up (`givenup`). Hard forms say it loosely (first name only, no stated tie);
+soft forms name the person in full and say the tie ("Dana Reyes's brother, Mr. Reyes"). The
+rotation mixes hard and soft so the cases split strong and weaker readers alike. Every link and
+every giving-up is stated plainly; filler chatter about the person surrounds the records.
 
 ## Checks
 

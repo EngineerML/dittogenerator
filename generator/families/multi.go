@@ -256,11 +256,17 @@ func (m *multi) trapGivenUp(soft bool) {
 // unsolved, 11 trivial). The unsolved cases sat in title-givenup-hard (0-2
 // solves of 3 per agent) and shape-givenup-hard (0-1); they become
 // title-givenup-soft and shape-title-hard.
+//
+// v8.5: v8.4 still left 10 of 35 unsolved, mostly where a given-up trap sat on
+// top of a link's own trap (number, shape, title + givenup: 0-2 solves of 3-4
+// per agent). Every link already brings a trap of its own, so the given-up
+// trap stays only with the session link (solved by every agent) and the
+// given-up link itself; the rest carry a title trap or no extra one.
 var multiPlans = [][3]string{
-	{"number", "givenup", "soft"}, {"session", "title", "hard"}, {"shape", "givenup", "soft"},
-	{"number", "title", "hard"}, {"session", "givenup", "soft"}, {"shape", "title", "soft"},
-	{"title", "givenup", "soft"}, {"number", "givenup", "hard"}, {"session", "title", "soft"},
-	{"shape", "title", "hard"}, {"found", "-", "soft"},
+	{"number", "title", "hard"}, {"session", "title", "hard"}, {"shape", "title", "soft"},
+	{"number", "-", "soft"}, {"session", "givenup", "soft"}, {"shape", "-", "soft"},
+	{"title", "-", "soft"}, {"number", "title", "soft"}, {"session", "title", "soft"},
+	{"shape", "title", "soft"}, {"found", "-", "soft"},
 }
 
 // MultiList builds the i-th rotation plan's case.
