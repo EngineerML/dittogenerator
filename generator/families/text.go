@@ -124,10 +124,10 @@ func (b *Builder) Note(wave int, line string, protect ...string) string {
 	case r < 5:
 		return b.Say(wave, line, ack)
 	case r < 7:
-		from := b.Any(firstNames)
+		from := b.Any(senderNames)
 		return b.Say(wave, fmt.Sprintf("Forwarding an email from %s.\n\nSubject: %s\n\n%s\n\nThanks,\n%s", from, b.Any(subjects), line, from), ack)
 	case r < 9:
-		return b.Say(wave, fmt.Sprintf("Forwarding a text from %s: \"%s\"", b.Any(firstNames), line), ack)
+		return b.Say(wave, fmt.Sprintf("Forwarding a text from %s: \"%s\"", b.Any(senderNames), line), ack)
 	default:
 		return b.Say(wave, "Pasted from the shared planning sheet: "+line, ack)
 	}

@@ -262,11 +262,35 @@ func (m *multi) trapGivenUp(soft bool) {
 // per agent). Every link already brings a trap of its own, so the given-up
 // trap stays only with the session link (solved by every agent) and the
 // given-up link itself; the rest carry a title trap or no extra one.
-var multiPlans = [][3]string{
+var multiPlansV85 = [][3]string{
 	{"number", "title", "hard"}, {"session", "title", "hard"}, {"shape", "title", "soft"},
 	{"number", "-", "soft"}, {"session", "givenup", "soft"}, {"shape", "-", "soft"},
 	{"title", "-", "soft"}, {"number", "title", "soft"}, {"session", "title", "soft"},
 	{"shape", "title", "soft"}, {"found", "-", "soft"},
+}
+
+// multiPlans (v9): the condition link (v9.go) takes 6 of 11 slots at both
+// strengths, the place-considered trap (v9.go) replaces the title and given-up
+// traps, and our number and name-shape links keep the rest.
+//
+// v9.2: on the released-agent panel v9.1 scored about 0.085 (10
+// discriminating, 5 unsolved, 20 trivial): the soft condition was solved by
+// all, the hard one (superseded state + paraphrase) split the panel 3-4 of 6.
+// v9.2 keeps v8.5's plans (0.13-0.17 on the same panel) and gives the hard
+// condition the three v8.5 plans every agent solved (number-title-soft,
+// number-soft, found-soft).
+var multiPlansV91 = [][3]string{
+	{"cond", "-", "soft"}, {"cond", "intent", "hard"}, {"number", "intent", "soft"},
+	{"cond", "-", "hard"}, {"shape", "-", "soft"}, {"cond", "intent", "soft"},
+	{"number", "-", "soft"}, {"cond", "-", "soft"}, {"shape", "intent", "soft"},
+	{"cond", "-", "hard"}, {"number", "intent", "hard"},
+}
+
+var multiPlans = [][3]string{
+	{"number", "title", "hard"}, {"session", "title", "hard"}, {"shape", "title", "soft"},
+	{"cond", "-", "hard"}, {"session", "givenup", "soft"}, {"shape", "-", "soft"},
+	{"title", "-", "soft"}, {"cond", "intent", "hard"}, {"session", "title", "soft"},
+	{"shape", "title", "soft"}, {"cond", "-", "hard"},
 }
 
 // MultiList builds the i-th rotation plan's case.
@@ -301,8 +325,12 @@ func MultiList(b *Builder, i int) challenge.Case {
 		m.linkRoleNote()
 	case "found":
 		m.linkGivenUp(soft)
+	case "cond":
+		m.linkCond(soft)
 	}
 	switch plan[1] {
+	case "intent":
+		m.trapIntent(soft)
 	case "title":
 		if plan[0] != "title" {
 			m.trapTitle(soft)
@@ -312,11 +340,15 @@ func MultiList(b *Builder, i int) challenge.Case {
 	}
 	b.Chatter(person, 3)
 	kind := "multi-" + plan[0] + "-" + plan[1] + "-" + plan[2]
+	ask := b.Phrase(multiLines, "ask", "c", m.kind[0], "p", person)
+	if plan[0] == "cond" {
+		ask = b.Phrase(v9Lines, "askNow", "c", m.kind[0], "p", person)
+	}
 	return challenge.Case{
 		MemoryCase: protocol.MemoryCase{
 			ID:                fmt.Sprintf("%s-%d", kind, b.Len()),
 			QuestionType:      kind,
-			Question:          b.Phrase(multiLines, "ask", "c", m.kind[0], "p", person),
+			Question:          ask,
 			ExpectedAnswer:    strings.Join(m.items, ", "),
 			AnswerKind:        protocol.AnswerList,
 			AnswerItems:       m.items,

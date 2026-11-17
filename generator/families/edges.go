@@ -209,19 +209,21 @@ var chatter = []string{
 	"{p} spent twenty minutes describing the upstairs neighbour's parrot.",
 	"{p} left an umbrella at mine, the second one this month.",
 	"{p} can't decide between grey and sage for the kitchen walls.",
-	"{p} is off sick with a sore throat and a bad cough.",
-	"{p} wanted to know if a rattling exhaust is worth worrying about.",
+	"{p} is reading a very long novel about a lighthouse keeper.",
+	"{p} wanted a recommendation for a good podcast about history.",
 	"{p} and I spent ages trying to assemble a flat-pack shelf.",
-	"{p} has started getting up early to go for a run.",
+	"{p} is learning to play the ukulele, slowly.",
 	"{p} is planning to grow tomatoes on the balcony.",
 }
 
-// Chatter seeds n chatter records about person in random waves, and a plain
-// filler pair beside every other one. Generation time grows with the pair
-// count and a run is capped at 60 s, so an 80-case pack stays near 1,200 pairs.
+// Chatter seeds n chatter records about person in random waves (distinct
+// lines; none touches work hours, health, cars or homes, which v9's conditions
+// use), and a plain filler pair beside every other one. Generation time grows
+// with the pair count and a run is capped at 60 s, so an 80-case pack stays
+// near 1,200 pairs.
 func (b *Builder) Chatter(person string, n int) {
-	for k := 0; k < n; k++ {
-		b.Say(b.Rng.Intn(Waves), capFirst(fill(b.Any(chatter), "p", person)), b.Any(acks))
+	for k, i := range b.Rng.Perm(len(chatter))[:n] {
+		b.Say(b.Rng.Intn(Waves), capFirst(fill(chatter[i], "p", person)), b.Any(acks))
 		if k%2 == 0 {
 			b.Filler()
 		}
