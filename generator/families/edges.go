@@ -46,7 +46,7 @@ var leads = [][2]string{
 	{"Waited with {p} at the vet's for over an hour.", "the person I waited with at the vet's"},
 	{"Was on the same coach tour as {p} all day.", "my seatmate on the coach tour"},
 	{"Volunteered at the food bank with {p} this afternoon.", "the volunteer I worked with"},
-	{"Got stuck in the lift at work with {p} for half an hour.", "the person I was stuck in the lift with"},
+	{"{p} drove me back from the station when the last train was cancelled.", "the one who drove me back from the station"},
 	{"Ran the parents' raffle stall with {p} today.", "the parent I ran the raffle stall with"},
 }
 
@@ -204,16 +204,16 @@ func RoleNoteList(b *Builder, i int) challenge.Case {
 var chatter = []string{
 	"{p} rang this evening, mostly to complain about the weather.",
 	"{p} sent me a voice message I still have to listen to.",
-	"{p} is stressed about a deadline at work this week.",
-	"{p} finally fixed the squeaky gate in their garden.",
-	"{p} told me a very long story about their neighbour's cat.",
-	"{p} lost their phone charger at my place again.",
-	"{p} is thinking about repainting the hallway a dark green.",
-	"{p} has a stinking cold and is staying in bed today.",
-	"{p} asked me for advice about their car making a funny noise.",
+	"{p} has a report due on Friday and is barely sleeping.",
+	"{p} oiled the hinges on the back door at last, no more creaking.",
+	"{p} spent twenty minutes describing the upstairs neighbour's parrot.",
+	"{p} left an umbrella at mine, the second one this month.",
+	"{p} can't decide between grey and sage for the kitchen walls.",
+	"{p} is off sick with a sore throat and a bad cough.",
+	"{p} wanted to know if a rattling exhaust is worth worrying about.",
 	"{p} and I spent ages trying to assemble a flat-pack shelf.",
 	"{p} has started getting up early to go for a run.",
-	"{p} wants to start a vegetable patch this spring.",
+	"{p} is planning to grow tomatoes on the balcony.",
 }
 
 // Chatter seeds n chatter records about person in random waves, and a plain

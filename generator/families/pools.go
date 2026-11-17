@@ -86,7 +86,7 @@ var filler = [][2]string{
 	{"The neighbours are redoing their kitchen, so it's loud all day.", "Noise-cancelling headphones might help."},
 	{"I keep forgetting where I put my reading glasses.", "A fixed spot by the door can help."},
 	{"Started journaling before bed.", "That's a nice way to wind down."},
-	{"My laptop fan has been really loud lately.", "Cleaning the vents often fixes that."},
+	{"My laptop has been whirring like a hairdryer all week.", "Blowing the dust out of the vents often helps."},
 	{"Got a parking ticket outside the library, annoying.", "Sorry, that's frustrating."},
 	{"Thinking of repainting the hallway a lighter colour.", "Lighter colours make hallways feel bigger."},
 	{"The new season of that detective show is out.", "Enjoy the binge."},

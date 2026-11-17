@@ -90,7 +90,7 @@ var multiLines = Grammar{
 	"dropped": {
 		"{f} has had enough of {v} after the last price rise and isn't going back.",
 		"{f} let the card for {v} lapse and won't be renewing it.",
-		"{f} had a row with the staff at {v} and swore never to set foot in there again.",
+		"{f} fell out with the owner of {v} over a refund and is done with the place.",
 	},
 	"found": {
 		"{f} found {v} instead and now can't stop talking about it.",

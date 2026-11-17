@@ -4,7 +4,7 @@ package families
 // or anything a question asks about, so it can sit next to any record.
 
 var acks = []string{
-	"Got it.", "Thanks, I'll keep that in mind.", "Okay, noted.", "Understood.", "Thanks for the update.",
+	"Got it.", "Thanks, that's useful.", "Okay, noted.", "Understood.", "Thanks for the update.",
 	"Makes sense.", "All right, I'll remember that.", "Good to know.",
 }
 
