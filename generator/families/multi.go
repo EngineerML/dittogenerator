@@ -286,33 +286,35 @@ var multiPlansV91 = [][3]string{
 	{"cond", "-", "hard"}, {"number", "intent", "hard"},
 }
 
-var multiPlans = [][3]string{
+var multiPlansV92 = [][3]string{
 	{"number", "title", "hard"}, {"session", "title", "hard"}, {"shape", "title", "soft"},
 	{"cond", "-", "hard"}, {"session", "givenup", "soft"}, {"shape", "-", "soft"},
 	{"title", "-", "soft"}, {"cond", "intent", "hard"}, {"session", "title", "soft"},
 	{"shape", "title", "soft"}, {"cond", "-", "hard"},
 }
 
-// MultiList builds the i-th rotation plan's case.
-func MultiList(b *Builder, i int) challenge.Case {
-	plan := multiPlans[b.Len()%len(multiPlans)]
-	soft := plan[2] == "soft"
-	var person, first, surname, confusable string
-	if plan[0] == "shape" {
-		shape := b.nameShape(b.Len())
-		person, confusable = shape[0], shape[1]
-		parts := strings.Fields(person)
-		first, surname = parts[0], parts[len(parts)-1]
-	} else {
-		person = b.OwnPerson()
-		parts := strings.Fields(person)
-		first, surname = parts[0], parts[1]
-	}
-	m := b.newMulti(person, first, surname)
-	full := m.shop()
-	m.items = append(m.items, full)
-	m.ids = append(m.ids, m.note(m.wave(), m.b.Phrase(multiLines, "full", "p", person, "v", full, "c", m.kind[0], "s", m.pronoun[0])))
-	switch plan[0] {
+// multiPlans (v10): two links, no full-name item. v9.2 scored 0.110 on the
+// released-agent panel (16 discriminating, 14 trivial, 5 unsolved): in its
+// trivial cases every agent named the full-name place, missed the link and
+// named no trap, which is 0.5 and solved. A released generator with no such
+// free item (tetgol v6) scored 0.226 on the same panel with no trivial case:
+// its agents failed by finding nothing right, not by naming traps, and they
+// failed different cases. So here both places come through links, each with
+// its own look-alike, and no extra trap: an agent needs one link for 0.5.
+// A plan whose second field is a link is a two-link plan; the strength applies
+// to the condition and given-up links.
+var multiPlans = [][3]string{
+	{"session", "number", "hard"}, {"cond", "session", "hard"}, {"shape", "number", "soft"},
+	{"cond", "number", "soft"}, {"session", "found", "soft"}, {"cond", "number", "hard"},
+	{"shape", "session", "soft"}, {"number", "found", "soft"}, {"cond", "session", "hard"},
+	{"shape", "cond", "soft"}, {"session", "number", "soft"},
+}
+
+// itemLinks are the plan fields that add an item (a link), not only a trap.
+var itemLinks = map[string]bool{"shape": true, "session": true, "number": true, "title": true, "role": true, "found": true, "cond": true}
+
+func (m *multi) link(name string, soft bool, confusable string) {
+	switch name {
 	case "shape":
 		m.linkShape(confusable)
 	case "session":
@@ -328,7 +330,35 @@ func MultiList(b *Builder, i int) challenge.Case {
 	case "cond":
 		m.linkCond(soft)
 	}
-	switch plan[1] {
+}
+
+// MultiList builds the i-th rotation plan's case.
+func MultiList(b *Builder, i int) challenge.Case {
+	plan := multiPlans[b.Len()%len(multiPlans)]
+	soft := plan[2] == "soft"
+	var person, first, surname, confusable string
+	twoLinks := itemLinks[plan[1]]
+	if plan[0] == "shape" || plan[1] == "shape" {
+		shape := b.nameShape(b.Len())
+		person, confusable = shape[0], shape[1]
+		parts := strings.Fields(person)
+		first, surname = parts[0], parts[len(parts)-1]
+	} else {
+		person = b.OwnPerson()
+		parts := strings.Fields(person)
+		first, surname = parts[0], parts[1]
+	}
+	m := b.newMulti(person, first, surname)
+	if !twoLinks {
+		full := m.shop()
+		m.items = append(m.items, full)
+		m.ids = append(m.ids, m.note(m.wave(), m.b.Phrase(multiLines, "full", "p", person, "v", full, "c", m.kind[0], "s", m.pronoun[0])))
+	}
+	m.link(plan[0], soft, confusable)
+	if twoLinks {
+		m.link(plan[1], soft, confusable)
+	}
+	switch map[bool]string{true: "", false: plan[1]}[twoLinks] {
 	case "intent":
 		m.trapIntent(soft)
 	case "title":
@@ -341,7 +371,7 @@ func MultiList(b *Builder, i int) challenge.Case {
 	b.Chatter(person, 3)
 	kind := "multi-" + plan[0] + "-" + plan[1] + "-" + plan[2]
 	ask := b.Phrase(multiLines, "ask", "c", m.kind[0], "p", person)
-	if plan[0] == "cond" {
+	if plan[0] == "cond" || plan[1] == "cond" {
 		ask = b.Phrase(v9Lines, "askNow", "c", m.kind[0], "p", person)
 	}
 	return challenge.Case{

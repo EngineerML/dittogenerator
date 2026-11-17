@@ -24,7 +24,7 @@ import (
 // Name and Version identify this generator in the pack's provenance.
 const (
 	Name    = "horizon"
-	Version = "9"
+	Version = "10"
 )
 
 // GradingBenchVersions are the pack grading policies our families are
@@ -75,14 +75,13 @@ func run(in io.Reader, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	// Self-check before emitting: never ship a case the scorer will reject.
+	// No self-check here (v10): the scorer validates the pack after the run,
+	// and an invalid pack fails its seed either way, while ValidateGenerated
+	// inside the run counts against the 60 s, 1-CPU generation limit and took
+	// about 18 s on some 80-case seeds. The tests validate every size instead.
 	raw, err := json.Marshal(pack)
 	if err != nil {
 		return err
-	}
-	if r := challenge.ValidateGenerated(raw, req); !r.Valid {
-		b, _ := json.MarshalIndent(r.Issues, "", "  ")
-		return fmt.Errorf("generated pack is invalid:\n%s", b)
 	}
 	_, err = out.Write(append(raw, '\n'))
 	return err
