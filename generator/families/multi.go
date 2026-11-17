@@ -303,15 +303,25 @@ var multiPlansV92 = [][3]string{
 // its own look-alike, and no extra trap: an agent needs one link for 0.5.
 // A plan whose second field is a link is a two-link plan; the strength applies
 // to the condition and given-up links.
-var multiPlans = [][3]string{
+//
+// v10 result on that panel: 0.052 (9 discriminating, 16 trivial, 10
+// unsolved). With no free item, an agent that missed one link filled the
+// answer with that link's look-alike ("Which two florists does X love?" drew
+// the given-up florist from all four), and since the agents share one model
+// the same look-alike caught all four: 7 cases had every agent name a trap.
+// v9.3 goes back to the v9.2 plans; these stay for reference.
+var multiPlansV10 = [][3]string{
 	{"session", "number", "hard"}, {"cond", "session", "hard"}, {"shape", "number", "soft"},
 	{"cond", "number", "soft"}, {"session", "found", "soft"}, {"cond", "number", "hard"},
 	{"shape", "session", "soft"}, {"number", "found", "soft"}, {"cond", "session", "hard"},
 	{"shape", "cond", "soft"}, {"session", "number", "soft"},
 }
 
-// itemLinks are the plan fields that add an item (a link), not only a trap.
-var itemLinks = map[string]bool{"shape": true, "session": true, "number": true, "title": true, "role": true, "found": true, "cond": true}
+var multiPlans = multiPlansV92
+
+// itemLinks are the second plan fields that make a two-link plan. "title" is
+// left out: as a second field it names the relative trap (v8.3-v9.2 plans).
+var itemLinks = map[string]bool{"shape": true, "session": true, "number": true, "role": true, "found": true, "cond": true}
 
 func (m *multi) link(name string, soft bool, confusable string) {
 	switch name {
