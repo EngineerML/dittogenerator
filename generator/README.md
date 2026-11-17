@@ -14,7 +14,9 @@ the families are ours.
 | `main.go` | entry point; declares the newest grading policy the request accepts that the generator knows, never below the round's own baseline |
 | `families/builder.go` | eight waves, opaque pair and session IDs, reserved values and people, timestamps |
 | `families/text.go` | a small grammar, renderers (chat, forwarded email, forwarded text, sheet row, long note) and letter-swap noise that never touches a value |
-| `families/multi.go` | the multi-link list family in the rotation (v8) |
+| `families/multi.go` | the multi-link list family in the rotation (v8, v9) |
+| `families/v9.go` | the condition link and the considered-place look-alike |
+| `families/senders.go` | names for the senders of forwarded notes, apart from the case people |
 | `families/edges.go` | link wording, name shapes, four-digit numbers, person chatter |
 | `families/lists.go` | earlier list families and the shop kinds |
 | `families/chains.go`, `joins.go`, `splitters.go` | single-answer families, kept for experiments |
@@ -35,10 +37,14 @@ following the link earns full credit, and taking a look-alike earns nothing.
 | `title` | Ms. or Mr. and the surname, whichever fits the full-name record's pronoun | the surname under the other title |
 | `shape` | a name outside the two-capitalised-words shape (double first names, particles, Mac/O' forms) | a person the two-word reading confuses with them |
 | `found` | the place the person moved to after giving one up | the place given up |
+| `cond` | a record saying which place depends on a condition (shift pattern, car, knee, home, job), and records saying which side holds now | the place under the side that no longer holds |
 
 Most cases add one more look-alike: a relative under the other title (`title`) or a place the person
-used and later gave up (`givenup`). Hard forms say it loosely (first name only, no stated tie);
-soft forms name the person in full and say the tie ("Dana Reyes's brother, Mr. Reyes"). The
+used and later gave up (`givenup`), or a place the person considered or tried once and did not
+take up (`intent`). Hard forms say it loosely (first name only, no stated tie);
+soft forms name the person in full and say the tie ("Dana Reyes's brother, Mr. Reyes"). A hard
+`cond` case first states the other side of the condition, then says in other words that this side
+holds now; a soft one states the current side plainly. Questions over a `cond` link ask about now. The
 rotation mixes hard and soft so the cases split strong and weaker readers alike. Every link and
 every giving-up is stated plainly; filler chatter about the person surrounds the records.
 
